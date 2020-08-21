@@ -33,7 +33,7 @@
       </div>
 
       <dialog-actions-bar>
-        <button class="k-button" style="background-color: #81AE9D" @click="handlePaste">Insert</button>
+        <button class="k-button" style="background-color: #81AE9D" @click="handlePaste" :disabled="this.pastedText.trim().length === 0">Insert</button>
         <button class="k-button" style="background-color: #dddddd" @click="closeModal">Cancel</button>
       </dialog-actions-bar>
     </k-dialog>
@@ -128,16 +128,18 @@ export default {
     },
     handlePaste() {
       this.closeModal();
-
+      
       const pastedRows = this.pastedText
         .split("\n")
         .map((row) => row.split(/\t/));
       
-      if (pastedRows.length === 1) {
-        return this.$store.commit("notify",{ message: "You either pasted no data or no header row. Correct and try again.", callback: this.openModal })
+      const pastedHeaders = [...pastedRows[0]];
+      const pastedHeaderGridColumnIndexes = pastedHeaders.map( pHeader => this.gridColumns.findIndex( h => h.friendlyName == pHeader ));
+      if (pastedRows.length === 1 || pastedHeaderGridColumnIndexes.every( idx => idx < 0 ) ) {
+        return this.$store.commit("notify",{ message: "You either pasted no data, no header row, or all headers are invalid. Correct and try again.", callback: this.openModal })
       }
 
-      const pastedHeaders = [...pastedRows[0]];
+      
       pastedRows.splice(0,1); // remove header row and any entirely blank rows
       let i = 0
       pastedRows.forEach( row => {
@@ -161,11 +163,9 @@ export default {
           const thisRow = {...gridDataCopy[currentRow]}
           let i = 0;
           pastedRow.forEach( pastedCol => {
-            const thisHeader = pastedHeaders[i];
-            const gridColumnsIndex = this.gridColumns.findIndex( c => c.friendlyName === thisHeader)
-            if (gridColumnsIndex >= 0 ) { // check if header is valid, add to error list if not
-              const realColumnName = this.gridColumns[gridColumnsIndex].field;
-              thisRow[realColumnName] = pastedCol;
+            const thisHeaderIdx = pastedHeaderGridColumnIndexes[i];
+            if (thisHeaderIdx >= 0 ) { // check if header is valid, add to error list if not
+              thisRow[this.gridColumns[thisHeaderIdx].field] = pastedCol;
               i++;
             }
           })
