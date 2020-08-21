@@ -7,8 +7,8 @@
 </template>
 
 <script>
-import Navbar from "@/components/Navbar"
-import GenericModal from "@/components/GenericModal"
+import Navbar from "@/Shared/Components/Navbar"
+import GenericModal from "@/Shared/Components/GenericModal"
 
 export default {
   name: 'App',

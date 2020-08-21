@@ -7,12 +7,12 @@ import Axios from 'axios'
 import store from './store'
 import '@progress/kendo-theme-bootstrap/dist/all.css'
 import '@progress/kendo-ui'
-import { Grid, GridInstaller } from '@progress/kendo-grid-vue-wrapper'
+import { Grid } from '@progress/kendo-vue-grid'
 import { DropDownList, DropdownsInstaller } from '@progress/kendo-dropdowns-vue-wrapper'
 import { NumericTextBox, InputsInstaller } from '@progress/kendo-inputs-vue-wrapper'
 import { Dialog, DialogActionsBar } from '@progress/kendo-vue-dialogs';
-
-
+import Vuelidate from 'vuelidate';
+import { DataSource, DataSourceInstaller } from '@progress/kendo-datasource-vue-wrapper'
 
 Vue.prototype.$http = Axios;
 
@@ -20,10 +20,12 @@ Vue.config.productionTip = false;
 
 Vue.component('k-dialog', Dialog);
 Vue.component('dialog-actions-bar', DialogActionsBar);
+Vue.component('Grid', Grid);
 
-Vue.use(GridInstaller);
+Vue.use(Vuelidate);
 Vue.use(DropdownsInstaller);
 Vue.use(InputsInstaller);
+Vue.use(DataSourceInstaller);
 
 new Vue({
   el: '#app',
