@@ -18,18 +18,9 @@
         </div>
       </div>
       <div class="row mx-2">
-        <div class="col">Paste into / starting at column:</div>
         <div class="col">Paste into / starting at row:</div>
       </div>
       <div class="row mx-2">
-        <div class="col">
-          <kendo-dropdownlist
-            :data-source="gridColumns"
-            v-model="pasteIntoColumn"
-            data-text-field="friendlyName"
-            data-value-field="field"
-          ></kendo-dropdownlist>
-        </div>
         <div class="col">
           <kendo-numerictextbox
             v-model.number="pasteIntoRow"
@@ -146,15 +137,44 @@ export default {
         return this.$store.commit("notify",{ message: "You either pasted no data or no header row. Correct and try again.", callback: this.openModal })
       }
 
-      const headers = [...pastedRows[0]];
+      const pastedHeaders = [...pastedRows[0]];
+      pastedRows.splice(0,1); // remove header row and any entirely blank rows
+      let i = 0
+      pastedRows.forEach( row => {
+        if (row.every( c => c === '')) { pastedRows.splice(i,1) }
+        i++
+      })
+      const blankRow = {}
+      this.gridColumns.forEach( c => blankRow[c.field] = '');
+      const totalNewRows = pastedRows.length
+      const newRowsToAdd = totalNewRows - ( this.blankRows - this.pasteIntoRow + 1 )
+      
+      // Stretch grid data to fit the rows that we need    
+      let gridDataCopy = [...this.gridData]
+      for (let i = 1; i <= newRowsToAdd; i++) {
+        gridDataCopy.push(blankRow);
+      }
 
-      // Delete the headers row from the pastedRows
-      
-      const dataIsOneColumn = pastedRows.every( rw => rw.length === 1)
-      const gridDataColumnStartIndex = this.columns.findIndex( c => c.field === this.pasteIntoColumn)
-        
+      let currentRow = this.pasteIntoRow - 1 // zero based index
     
-      
+      pastedRows.forEach( pastedRow => {
+          const thisRow = {...gridDataCopy[currentRow]}
+          let i = 0;
+          pastedRow.forEach( pastedCol => {
+            const thisHeader = pastedHeaders[i];
+            const gridColumnsIndex = this.gridColumns.findIndex( c => c.friendlyName === thisHeader)
+            if (gridColumnsIndex >= 0 ) { // check if header is valid, add to error list if not
+              const realColumnName = this.gridColumns[gridColumnsIndex].field;
+              thisRow[realColumnName] = pastedCol;
+              i++;
+            }
+          })
+          gridDataCopy[currentRow] = {...thisRow}
+          currentRow++;  
+      });
+
+      this.blankRows = gridDataCopy.length;
+      this.gridData = gridDataCopy;
     },
     resetGrid() {
       this.selectedEntityStoreAction = "";
@@ -204,12 +224,6 @@ export default {
     },
   },
   watch: {
-    blankRows: function (val) {
-      // If blankrows was updated while griddata was loaded
-      if (this.gridData) {
-        this.refreshGridAfterDataLoad();
-      }
-    },
     selectedEntityStoreAction: async function (val) {
       if (val) {
         // Get data
