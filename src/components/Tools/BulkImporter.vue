@@ -12,7 +12,7 @@
           <textarea
             style="width: 720px"
             v-model="pastedText"
-            placeholder="Paste tab separated data here..."
+            placeholder="Paste tab separated data here, including 'headers' row..."
           ></textarea>
           </div>
         </div>
@@ -75,8 +75,6 @@
         <button
           class="btn btn-outline-success"
           type="button"
-          data-toggle="modal"
-          data-target="#exampleModal"
           :disabled="!gridData"
           @click="openModal"
         >Bulk Paste</button>
@@ -138,17 +136,24 @@ export default {
       this.modalVisible = false;
     },
     handlePaste() {
-      
+      this.closeModal();
+
       const pastedRows = this.pastedText
         .split("\n")
         .map((row) => row.split(/\t/));
       
+      if (pastedRows.length === 1) {
+        return this.$store.commit("notify",{ message: "You either pasted no data or no header row. Correct and try again.", callback: this.openModal })
+      }
+
+      const headers = [...pastedRows[0]];
+
+      // Delete the headers row from the pastedRows
+      
       const dataIsOneColumn = pastedRows.every( rw => rw.length === 1)
       const gridDataColumnStartIndex = this.columns.findIndex( c => c.field === this.pasteIntoColumn)
         
-        for ()
-        for (let col = gridDataColumnStartIndex; col )
-
+    
       
     },
     resetGrid() {

@@ -1,12 +1,14 @@
 <template>
   <div id="app">
-    <Navbar v-if="this.$store.state.loggedInEmployee"></Navbar>
+    <GenericModal v-if="$store.state.modal.show"></GenericModal>
+    <Navbar v-if="$store.state.loggedInEmployee"></Navbar>
     <router-view />
   </div>
 </template>
 
 <script>
 import Navbar from "@/components/Navbar"
+import GenericModal from "@/components/GenericModal"
 
 export default {
   name: 'App',
@@ -14,8 +16,12 @@ export default {
     return {
       }
   },
+  mounted() {
+    this.$store.commit('close_modal')
+  },
   components: {
     'Navbar': Navbar,
+    'GenericModal': GenericModal
   }
 }
 </script>
