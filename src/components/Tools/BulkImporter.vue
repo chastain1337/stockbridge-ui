@@ -85,7 +85,14 @@
     </div>
 
     <div class="row">
-      <div class="col" @keyup="keyPressed">
+      <div class="col">
+        <EditableGrid 
+        v-if="gridData"
+        :columns="gridColumns"
+        :emptyRows="blankRows"
+        />
+      </div>
+      <!-- <div class="col" @keyup="keyPressed">
         <Grid
           ref="grid"
           v-if="gridData"
@@ -99,7 +106,7 @@
           :reorderable="true"
           :resizable="true"
         ></Grid>
-      </div>
+      </div>-->
     </div>
   </div>
 </template>
@@ -108,9 +115,11 @@
 import { required } from "vuelidate/lib/validators";
 import entityValidations from "@/Shared/validations";
 import gridEntityData from "@/Shared/gridEntityData";
+import EditableGrid from "@/shared/Components/EditableGrid";
 
 export default {
   name: "BulkImporter",
+  components: { EditableGrid: EditableGrid },
   data() {
     return {
       bulkImportOptions: [
@@ -134,90 +143,90 @@ export default {
     };
   },
   methods: {
-    roleEditor: function (container, options) {
-      let select = `<kendo-dropdownlist :data-source="roles" optionLabel="Role" v-model="selectedRole"></kendo-dropdownlist>`;
-      select.appendTo(container);
+    // roleEditor: function (container, options) {
+    //   let select = `<kendo-dropdownlist :data-source="roles" optionLabel="Role" v-model="selectedRole"></kendo-dropdownlist>`;
+    //   select.appendTo(container);
 
-      // use Vue.extend to make a component constructor, and new a component
-      let qrcodeCapture = new (Vue.extend(QrcodeCapture))();
-      qrcodeCapture.$on("decode", (decodedString) => {
-        select.val(decodedString).trigger("change");
-        // Trigger "change" element to tell kendo that you have change the data
-      });
-      qrcodeCapture.$mount();
-      container.append(qrcodeCapture.$el);
-    },
-    submit() {
-      switch (this.selectedEntityStoreAction) {
-        case "getEmployees":
-          return this.$store.dispatch("addEmployees", this.gridData);
-      }
-    },
-    async validate() {
-      const tableRows = this.$refs.grid.vs.table.rows;
-      await this.closeEdit();
-      for (let r = 0; r < tableRows.length; r++) {
-        const tableCells = tableRows[r].cells;
-        for (let c = 0; c < tableCells.length; c++) {
-          const thisCell = tableCells[c];
-          const columnName = this.gridColumns[c].field;
-          if (this.$v.gridData.$each[r][columnName].$invalid) {
-            const classAppend = r % 2 === 0 ? "-e" : "-o";
-            thisCell.classList.add("invalid" + classAppend);
-          }
-        }
-      }
-    },
-    // renderer(h, defaultRendering, props, listeners) {
-    //   console.log("re-rendered the grid");
-    //   return defaultRendering;
+    //   // use Vue.extend to make a component constructor, and new a component
+    //   let qrcodeCapture = new (Vue.extend(QrcodeCapture))();
+    //   qrcodeCapture.$on("decode", (decodedString) => {
+    //     select.val(decodedString).trigger("change");
+    //     // Trigger "change" element to tell kendo that you have change the data
+    //   });
+    //   qrcodeCapture.$mount();
+    //   container.append(qrcodeCapture.$el);
     // },
-    keyPressed(e) {
-      if (e.key === "Escape" || e.key === "Enter") {
-        this.closeEdit();
-      }
-    },
-    columnReorder: function (options) {
-      this.gridColumns = options.columns;
-    },
-    rowClick: function (e) {
-      this.gridData = this.gridData.map((d) => {
-        d.inEdit = false;
-        return d;
-      });
-      const invalidTds = document.querySelectorAll("[class^=invalid]");
-      if (invalidTds.length > 0) {
-        invalidTds.forEach((td) => {
-          td.classList.remove("invalid-e");
-          td.classList.remove("invalid-o");
-        });
-      }
+    // submit() {
+    //   switch (this.selectedEntityStoreAction) {
+    //     case "getEmployees":
+    //       return this.$store.dispatch("addEmployees", this.gridData);
+    //   }
+    // },
+    // async validate() {
+    //   const tableRows = this.$refs.grid.vs.table.rows;
+    //   await this.closeEdit();
+    //   for (let r = 0; r < tableRows.length; r++) {
+    //     const tableCells = tableRows[r].cells;
+    //     for (let c = 0; c < tableCells.length; c++) {
+    //       const thisCell = tableCells[c];
+    //       const columnName = this.gridColumns[c].field;
+    //       if (this.$v.gridData.$each[r][columnName].$invalid) {
+    //         const classAppend = r % 2 === 0 ? "-e" : "-o";
+    //         thisCell.classList.add("invalid" + classAppend);
+    //       }
+    //     }
+    //   }
+    // },
+    // // renderer(h, defaultRendering, props, listeners) {
+    // //   console.log("re-rendered the grid");
+    // //   return defaultRendering;
+    // // },
+    // keyPressed(e) {
+    //   if (e.key === "Escape" || e.key === "Enter") {
+    //     this.closeEdit();
+    //   }
+    // },
+    // columnReorder: function (options) {
+    //   this.gridColumns = options.columns;
+    // },
+    // rowClick: function (e) {
+    //   this.gridData = this.gridData.map((d) => {
+    //     d.inEdit = false;
+    //     return d;
+    //   });
+    //   const invalidTds = document.querySelectorAll("[class^=invalid]");
+    //   if (invalidTds.length > 0) {
+    //     invalidTds.forEach((td) => {
+    //       td.classList.remove("invalid-e");
+    //       td.classList.remove("invalid-o");
+    //     });
+    //   }
 
-      this.editID = e.dataItem.id;
-      this.$set(e.dataItem, "inEdit", true);
-    },
-    closeEdit(e) {
-      return new Promise((resolve) => {
-        this.editID = null;
-        this.gridData = this.gridData.map((d) => {
-          d.inEdit = false;
-          return d;
-        });
-        window.setTimeout(() => {
-          resolve();
-        }, 0); // hack to make sure the grid resets back to text and not inputboxes before proceeding
-      });
-    },
-    itemChange: function (e) {
-      const data = [...this.gridData];
-      data[e.dataItem.id - 1] = {
-        ...data[e.dataItem.id - 1],
-        [e.field]: e.value,
-      };
-      this.gridData = data;
-      this.$set(e.dataItem, e.field, e.value);
-      this.$v.gridData.$touch();
-    },
+    //   this.editID = e.dataItem.id;
+    //   this.$set(e.dataItem, "inEdit", true);
+    // },
+    // closeEdit(e) {
+    //   return new Promise((resolve) => {
+    //     this.editID = null;
+    //     this.gridData = this.gridData.map((d) => {
+    //       d.inEdit = false;
+    //       return d;
+    //     });
+    //     window.setTimeout(() => {
+    //       resolve();
+    //     }, 0); // hack to make sure the grid resets back to text and not inputboxes before proceeding
+    //   });
+    // },
+    // itemChange: function (e) {
+    //   const data = [...this.gridData];
+    //   data[e.dataItem.id - 1] = {
+    //     ...data[e.dataItem.id - 1],
+    //     [e.field]: e.value,
+    //   };
+    //   this.gridData = data;
+    //   this.$set(e.dataItem, e.field, e.value);
+    //   this.$v.gridData.$touch();
+    // },
 
     openModal() {
       this.modalVisible = true;
@@ -339,30 +348,7 @@ export default {
       }
     },
   },
-  validations() {
-    let validationToReturn = {};
-    switch (this.selectedEntityStoreAction) {
-      case "getEmployees":
-        validationToReturn = entityValidations.employeeValidations;
-        break;
-      default:
-        break;
-    }
-
-    return {
-      gridData: {
-        required,
-        $each: validationToReturn,
-      },
-    };
-  },
 };
-
-/**
- * @todo per-entity validation
- * @todo link to backend api (obviously)
- * @todo error report on bulk paste
- */
 </script>
 
 <style>
