@@ -49,7 +49,7 @@
           data-value-field="storeAction"
         ></kendo-dropdownlist>
       </div>
-      <div class="col-3">
+      <div class="col-5">
         Blank Rows:
         <kendo-numerictextbox
           class="ml-2"
@@ -61,7 +61,7 @@
           :disabled="!!gridData"
         ></kendo-numerictextbox>
       </div>
-      <div class="col-2">
+      <div class="col-3">
         <button class="btn btn-outline-danger" @click="resetGrid" :disabled="!gridData">Reset</button>
         <button
           class="btn btn-outline-success"
@@ -69,6 +69,18 @@
           :disabled="!gridData"
           @click="openModal"
         >Bulk Paste</button>
+        <button
+          class="btn btn-outline-warning"
+          type="button"
+          :diabled="!gridData"
+          @click="validate"
+        >Validate Grid</button>
+        <button
+          class="btn btn-success"
+          type="button"
+          :disabled="$v.gridData.$anyInvalid"
+          @click="submit"
+        >Import Data</button>
       </div>
     </div>
 
@@ -93,8 +105,9 @@
 </template>
 
 <script>
-import { required, minLength } from "vuelidate/lib/validators";
+import { required } from "vuelidate/lib/validators";
 import entityValidations from "@/Shared/validations";
+import gridEntityData from "@/Shared/gridEntityData";
 
 export default {
   name: "BulkImporter",
@@ -115,18 +128,49 @@ export default {
       modalVisible: false,
       pasteIntoRow: 1,
       editID: null,
-      updatedData: [],
+      validateMode: false,
+      roles: ["Employee", "Owner", "Manager"],
+      selectedRole: "",
     };
   },
   methods: {
-    // renderer(h,defaultRendering,props,listeners) {
-    //   // map dataitem to this.$v.gridData[something]["something"]
-    //   let invalidClass=""
-    //   if ( this.$v.gridData.$each[props.dataItem.id-1][props.field].$invalid && props.dataItem[props.field] !== '') {
-    //     invalidClass="invalid"
-    //   }
-    //   defaultRendering.data.class = invalidClass
-    //   return defaultRendering
+    roleEditor: function (container, options) {
+      let select = `<kendo-dropdownlist :data-source="roles" optionLabel="Role" v-model="selectedRole"></kendo-dropdownlist>`;
+      select.appendTo(container);
+
+      // use Vue.extend to make a component constructor, and new a component
+      let qrcodeCapture = new (Vue.extend(QrcodeCapture))();
+      qrcodeCapture.$on("decode", (decodedString) => {
+        select.val(decodedString).trigger("change");
+        // Trigger "change" element to tell kendo that you have change the data
+      });
+      qrcodeCapture.$mount();
+      container.append(qrcodeCapture.$el);
+    },
+    submit() {
+      switch (this.selectedEntityStoreAction) {
+        case "getEmployees":
+          return this.$store.dispatch("addEmployees", this.gridData);
+      }
+    },
+    async validate() {
+      const tableRows = this.$refs.grid.vs.table.rows;
+      await this.closeEdit();
+      for (let r = 0; r < tableRows.length; r++) {
+        const tableCells = tableRows[r].cells;
+        for (let c = 0; c < tableCells.length; c++) {
+          const thisCell = tableCells[c];
+          const columnName = this.gridColumns[c].field;
+          if (this.$v.gridData.$each[r][columnName].$invalid) {
+            const classAppend = r % 2 === 0 ? "-e" : "-o";
+            thisCell.classList.add("invalid" + classAppend);
+          }
+        }
+      }
+    },
+    // renderer(h, defaultRendering, props, listeners) {
+    //   console.log("re-rendered the grid");
+    //   return defaultRendering;
     // },
     keyPressed(e) {
       if (e.key === "Escape" || e.key === "Enter") {
@@ -141,19 +185,35 @@ export default {
         d.inEdit = false;
         return d;
       });
+      const invalidTds = document.querySelectorAll("[class^=invalid]");
+      if (invalidTds.length > 0) {
+        invalidTds.forEach((td) => {
+          td.classList.remove("invalid-e");
+          td.classList.remove("invalid-o");
+        });
+      }
+
       this.editID = e.dataItem.id;
       this.$set(e.dataItem, "inEdit", true);
     },
     closeEdit(e) {
-      this.editID = null;
-      this.gridData = this.gridData.map((d) => {
-        d.inEdit = false;
-        return d;
+      return new Promise((resolve) => {
+        this.editID = null;
+        this.gridData = this.gridData.map((d) => {
+          d.inEdit = false;
+          return d;
+        });
+        window.setTimeout(() => {
+          resolve();
+        }, 0); // hack to make sure the grid resets back to text and not inputboxes before proceeding
       });
     },
     itemChange: function (e) {
-      const data = [...this.gridData]
-      data[e.dataItem.id-1] = {...data[e.dataItem.id-1], [e.field]: e.value}
+      const data = [...this.gridData];
+      data[e.dataItem.id - 1] = {
+        ...data[e.dataItem.id - 1],
+        [e.field]: e.value,
+      };
       this.gridData = data;
       this.$set(e.dataItem, e.field, e.value);
       this.$v.gridData.$touch();
@@ -174,7 +234,7 @@ export default {
 
       const pastedHeaders = [...pastedRows[0]];
       const pastedHeaderGridColumnIndexes = pastedHeaders.map((pHeader) =>
-        this.gridColumns.findIndex((h) => h.title == pHeader)
+        this.gridColumns.findIndex((h) => h.title === pHeader)
       );
       if (
         pastedRows.length === 1 ||
@@ -241,24 +301,17 @@ export default {
         // Define sampleData based on entity selected
         case "getEmployees":
           const firstRowOfData = { ...this.$store.state.employees[0] };
-          const mapToTitles = {
-            firstName: "First Name",
-            lastName: "Last Name",
-            userName: "Username",
-            password: "Password",
-            email: "Email",
-            startDate: "Start Date",
-            role: "Role",
-            availableVacationHours: "Vacation Hours",
-            baseRate: "Rate",
-          };
+          const entityData = { ...gridEntityData.employees };
+          delete entityData.id; // no ID field on creation
+
           for (let field in firstRowOfData) {
-            if (mapToTitles[field]) {
+            if (entityData[field]) {
               columns.push({
                 field: field,
-                title: mapToTitles[field],
+                title: entityData[field].friendlyName,
+                editor: entityData[field].editor,
               });
-              sampleData[field] = "";
+              sampleData[field] = null;
             }
           }
       }
@@ -274,7 +327,7 @@ export default {
 
       this.gridColumns = columns;
       this.gridData = emptyRows;
-      //this.$v.gridData.touch();
+      // this.$v.gridData.touch();
     },
   },
   watch: {
@@ -287,15 +340,21 @@ export default {
     },
   },
   validations() {
+    let validationToReturn = {};
     switch (this.selectedEntityStoreAction) {
       case "getEmployees":
-        return {
-          gridData: {
-            required,
-            $each: entityValidations.employeeValidations
-          },
-        };
+        validationToReturn = entityValidations.employeeValidations;
+        break;
+      default:
+        break;
     }
+
+    return {
+      gridData: {
+        required,
+        $each: validationToReturn,
+      },
+    };
   },
 };
 
@@ -307,8 +366,12 @@ export default {
 </script>
 
 <style>
-  .invalid {
-    color: red !important;
-    background-color: pink !important;
-  }
+td.invalid-e {
+  color: red;
+  background-color: pink;
+}
+td.invalid-o {
+  color: rgb(151, 0, 0);
+  background-color: rgb(248, 135, 154);
+}
 </style>

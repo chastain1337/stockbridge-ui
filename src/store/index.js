@@ -87,6 +87,17 @@ export default new Vuex.Store({
           reject()
         })
       })
+    },
+    addEmployees({ commit }, employees) {
+      return new Promise((resolve, reject) => {
+        Axios.post("/api/Employee/Add")
+          .then(res => {
+            resolve(res);
+          })
+          .catch(err => {
+            reject(err);
+          })
+      })
     }
   },
   modules: {
