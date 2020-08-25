@@ -3,7 +3,7 @@
 // see http://vuejs-templates.github.io/webpack for documentation.
 
 const path = require('path')
-const  sslRootCAs = require('ssl-root-cas/latest')
+const sslRootCAs = require('ssl-root-cas/latest')
 sslRootCAs.inject()
 
 module.exports = {
@@ -25,8 +25,8 @@ module.exports = {
     autoOpenBrowser: false,
     errorOverlay: true,
     notifyOnErrors: true,
-    poll: false, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
-    
+    poll: true, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
+
 
     // Use Eslint Loader?
     // If true, your code will be linted during bundling and
