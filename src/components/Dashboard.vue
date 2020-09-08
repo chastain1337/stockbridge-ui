@@ -1,6 +1,6 @@
 <template>
     <div class="container mt-5 text-center">
-      <h1>Welcome, {{ $store.state.loggedInEmployee.firstName }}</h1>
+      <h1>Welcome{{ $store.state.loggedInEmployee ? ", "+$store.state.loggedInEmployee.firstName : "" }}</h1>
     </div>
 </template>
 

@@ -26,6 +26,7 @@
           @dataChange="dataChange"
           :validations="entityValidations"
           :buttonsToInclude="['ALL']"
+          :submitHandler="handleSubmit"
         />
       </div>
     </div>
@@ -60,6 +61,9 @@ export default {
     };
   },
   methods: {
+    handleSubmit() {
+      console.log("Submit clicked");
+    },
     dataChange(gridData) {
       this.totalRows = Math.max(gridData.length,this.totalRows)
       this.gridData = gridData;
@@ -97,13 +101,13 @@ export default {
               sampleData[field] = null;
             }
           }
-          thisValidationObject = allValidations.employees;
+          thisValidationObject = allValidations.employeeValidations;
       }
 
       this.entityValidations = thisValidationObject;
       this.gridColumns = columns;
       this.gridData = [];
-      // this.$v.gridData.touch();
+
     },
   },
   watch: {
