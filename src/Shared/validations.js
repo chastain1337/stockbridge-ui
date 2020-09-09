@@ -38,7 +38,8 @@ export default {
         withinRange: value => Date.parse(value) >= Date.parse("1920-08-06") && Date.parse(value) <= Date.now()
     },
     role: {
-        required
+        required,
+        validRole: value => ["Employee","Owner","Manager"].includes(value)
     },
     availableVacationHours: {
         integer, 

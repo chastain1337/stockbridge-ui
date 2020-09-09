@@ -1,11 +1,3 @@
-const employeeRoleEditor = `
-<select>
-    <option>Employee</option>
-    <option>Manager</option>
-    <option>Owner</option>
-</select>
-`
-
 export default {
 
     employees: {
@@ -16,7 +8,7 @@ export default {
         password: { friendlyName: "Password"},
         email: { friendlyName: "Email"},
         startDate: { friendlyName: "Start Date"},
-        role: { friendlyName: "Role", editor: employeeRoleEditor },
+        role: { friendlyName: "Role" },
         availableVacationHours: { friendlyName: "Vacation Hours"},
         baseRate: { friendlyName: "Rate"},
     }

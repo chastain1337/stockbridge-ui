@@ -84,7 +84,7 @@ export default {
     };
   },
   props: {
-    columns: {required: true }, // title: string, field: string, editor?: defaults to text, can pass in HTML or Vue object
+    columns: {required: true }, // key: {friendlyName: "String"}, key functions as technical field name
     data: { required: true }, // must pass in empty array if only blank rows
     totalRows: { type: Number, required: true }, // generates blank rows after data rows using the columns provided. Sets the initial value of the selector (see enableRowCountEdit)
     validations: Object, // vuelidate validations object, see /shared/validations.js for examples
@@ -213,7 +213,6 @@ export default {
       this.allData = dataCopy;
     },
     updateParent(newData) {
-      //const newestData = newData.filter( row => Object.values(row).some( cell => cell !== "" && cell !== null));
       this.$emit("dataChange", newData);
     },
   },
