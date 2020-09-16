@@ -9,15 +9,19 @@
         <router-link class="nav-link" :to="link.route">{{ link.text}}</router-link>
       </li>
     </ul>
+    
     <ul class="navbar-nav navbar-right">
       <li class="nav-item mr-4">
-        <router-link
-          class="nav-link btn btn-outline-dark btn-sm"
-          :to="'/MyAccount'"
-        >{{ $store.state.loggedInEmployee.firstName + ' ' + $store.state.loggedInEmployee.lastName }}</router-link>
+        <button
+        @click="showEntityExplorer"
+          class="nav-link btn btn-secondary"
+        >Entity Explorer</button>
       </li>
-      <li class="nav-item">
-        <a class="nav-link btn btn-light btn-sm" href="#" @click="handleLogout">Sign Out</a>
+      <li class="nav-item mr-4">
+        <router-link
+          class="nav-link k-button"
+          :to="'/MyAccount'"
+        >{{ $store.state.loggedInEmployee.firstName.substring(0,1) + $store.state.loggedInEmployee.lastName.substring(0,1) }}</router-link>
       </li>
     </ul>
   </nav>
@@ -37,10 +41,9 @@ export default {
     };
   },
   methods: {
-    handleLogout() {
-      this.$store.commit("clear_login");
-      this.$router.push("/Login");
-    },
+    showEntityExplorer() {
+      this.$store.commit("open_entity_explorer")
+    }
   },
 };
 </script>

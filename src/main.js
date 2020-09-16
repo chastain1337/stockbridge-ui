@@ -13,8 +13,15 @@ import { NumericTextBox, InputsInstaller } from '@progress/kendo-inputs-vue-wrap
 import { Dialog, DialogActionsBar } from '@progress/kendo-vue-dialogs';
 import Vuelidate from 'vuelidate';
 import { DataSource, DataSourceInstaller } from '@progress/kendo-datasource-vue-wrapper'
+import { Button,
+  ButtonsInstaller } from '@progress/kendo-buttons-vue-wrapper'
+import notify from "@/Shared/notify"
 
 Vue.prototype.$http = Axios;
+Vue.prototype.kendo = window.kendo;
+
+window.sb = {}
+window.sb.notify = notify;
 
 Vue.config.productionTip = false;
 
@@ -26,6 +33,7 @@ Vue.use(Vuelidate);
 Vue.use(DropdownsInstaller);
 Vue.use(InputsInstaller);
 Vue.use(DataSourceInstaller);
+Vue.use(ButtonsInstaller)
 
 new Vue({
   el: '#app',

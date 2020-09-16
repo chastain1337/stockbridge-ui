@@ -1,6 +1,7 @@
 <template>
     <div class="container mt-5 text-center">
-      <h1>Welcome{{ $store.state.loggedInEmployee ? ", "+$store.state.loggedInEmployee.firstName : "" }}</h1>
+      <h1 v-if="$store.state.loggedInEmployee">Welcome, {{ $store.state.loggedInEmployee.firstName}}</h1>
+      <div v-else style="font-size: 20pt"><div style="width: 20pt; height: 20pt;" class="spinner-border" role="status"></div> Fetching account information...</div>
     </div>
 </template>
 

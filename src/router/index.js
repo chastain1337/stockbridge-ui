@@ -79,7 +79,7 @@ router.beforeEach( (to,from,next) => {
         Axios.get(
           `/api/Employee/GetLoggedInEmployee`,{ headers: {Authorization: `Bearer ${token}`}})
         .then( res => {
-          Store.commit("auth_success", res.data );
+          Store.commit("auth_success", res.data.data );
         })
         .catch( err => {
           Store.commit("clear_login");

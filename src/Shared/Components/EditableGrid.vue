@@ -25,7 +25,10 @@ Using this component:
         ></kendo-numerictextbox>
       </div>
       <div class="col-1" v-if="buttonsToInclude.includes('SUBMIT') || buttonsToInclude.includes('ALL')">
-        <button class="btn btn-success" @click="handleSubmit" :disabled="!this.allData || !this.valid">Submit</button>
+        <button class="btn btn-success" @click="handleSubmit" :disabled="!allData || !valid || submitting">
+          <span v-if="submitting" class="spinner-border spinner-border-sm"></span>
+          <span v-else>Submit</span>
+        </button>
       </div>
       <div class="col-1" v-if="buttonsToInclude.includes('VALIDATE') || buttonsToInclude.includes('ALL')" >
         <button class="btn btn-warning" @click="handleValidate" :disabled="!this.allData">Validate</button>
@@ -84,17 +87,18 @@ export default {
     };
   },
   props: {
-    columns: {required: true }, // key: {friendlyName: "String"}, key functions as technical field name
+    columns: {required: true }, // {title: String, field: String}
     data: { required: true }, // must pass in empty array if only blank rows
     totalRows: { type: Number, required: true }, // generates blank rows after data rows using the columns provided. Sets the initial value of the selector (see enableRowCountEdit)
     validations: Object, // vuelidate validations object, see /shared/validations.js for examples
     enableBulkPaste: { type: Boolean, default: false }, // whether paste events should be auto-parsed and spread across the grid
     buttonsToInclude: {type: Array, default: []}, // toolbar buttons to include. Valid values are: "ROWCOUNT","SUBMIT","VALIDATE","COPY","CLEAR". Can also use "ALL" to enable all buttons
-    submitHandler: Function // only required if including submit button, the callback action to perform in the parent component when "Submit" is clicked. Note that the current data is not passed up because it the two components are guaranteed to have data in sync
+    submitHandler: Function, // only required if including submit button, the callback action to perform in the parent component when "Submit" is clicked. Note that the current data is not passed up because it the two components are guaranteed to have data in sync
+    submitting: Boolean
   },
   methods: {
-    handleSubmit() {
-      this.submitHandler()
+    handleSubmit(e) {
+      this.submitHandler();
     },
     handleCopy() {
       // convert grid to text

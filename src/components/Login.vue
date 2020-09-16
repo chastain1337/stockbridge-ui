@@ -28,14 +28,25 @@ export default {
     };
   },
   methods: {
-    login() {
+    login(e) {
+      e.target.disabled = true;
+      e.target.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`
       const username = this.username;
       const password = this.password;
       if (this.password.length > 0 && this.username.length > 0) {
         this.$store
           .dispatch("login", { username, password })
           .then(() => this.$router.push("Dashboard"))
-          .catch((err) => {});
+          .catch( (res) => {
+            e.target.disabled = false;
+            e.target.innerHTML = `Login`
+            if (res.data.errors) {
+              sb.notify.toast(`${res.data.errors.join("\n")}`,1000+res.data.errors.length*2000,"F")
+            } else {
+              sb.notify.toast(res.data,10000,"F",`${res.status} - ${res.statusText}`)
+            }
+            
+          });
       }
     },
   },

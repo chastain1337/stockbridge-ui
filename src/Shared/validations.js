@@ -8,6 +8,10 @@ import { required,
     integer,
     minValue } from "vuelidate/lib/validators";
 
+import store from "@/store"
+
+const isBool = v => ["TRUE","FALSE"].includes(v.toUpperCase())
+
 export default {
   employeeValidations: {
     firstName: {
@@ -39,7 +43,11 @@ export default {
     },
     role: {
         required,
-        validRole: value => ["Employee","Owner","Manager"].includes(value)
+        validRole: value => store.state.entities.roles.data.findIndex( d => d.name === value) > -1
+    },
+    department: {
+        required,
+        validDepartment: value => store.state.entities.departments.data.findIndex( d => d.name === value) > -1
     },
     availableVacationHours: {
         integer, 
@@ -48,6 +56,20 @@ export default {
         required,
         decimal,
         minValue: minValue(7.5)
+    },
+    terminated: {
+        required,
+        isBool
     }
-  }
+  },
+  roleValidations: {
+      name: {
+          isUnique: value => store.state.entities.roles.data.findIndex( r => r.name === value) === -1
+      }
+  },
+  departmentValidations: {
+    name: {
+        isUnique: value => store.state.entities.departments.data.findIndex( d => d.name === value) === -1
+    }
+}
 };

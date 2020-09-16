@@ -11,6 +11,7 @@
     "start": "npm run dev"
   },
   "dependencies": {
+    "@progress/kendo-buttons-vue-wrapper": "^2020.2.827",
     "@progress/kendo-data-query": "^1.5.4",
     "@progress/kendo-datasource-vue-wrapper": "^2020.2.820",
     "@progress/kendo-dropdowns-vue-wrapper": "^2020.2.722",

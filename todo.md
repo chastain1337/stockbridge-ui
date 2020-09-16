@@ -1,0 +1,1 @@
+Create temporary graphics while header and body are loading from getloggedinuser

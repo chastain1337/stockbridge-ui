@@ -1,6 +1,7 @@
 <template>
     <div class="container mt-3">
         <h1>My Account</h1>
+        <button class="btn btn-sm btn-dark mb-2" @click=handleLogout>Log Out</button>
         <table class="table table-bordered table-hover table-sm w-50">
             <thead>
                 <th>Property</th>
@@ -29,6 +30,12 @@ export default {
                 {friendlyName: "Username", value: user.userName}
             ]
         }
+    },
+    methods: {
+    handleLogout() {
+      this.$store.commit("clear_login");
+      this.$router.push("/Login");
+    },
     }
 }
 </script>
