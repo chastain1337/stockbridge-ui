@@ -47,6 +47,7 @@ export default {
         async handleEntityReload(getAction) {
           this.entitiesLoading = [...this.entitiesLoading,getAction];
           await this.$store.dispatch(getAction);
+          console.log(this.$store.state.entities);
           this.entitiesLoading = this.entitiesLoading.filter( i => i !== getAction);
         }
     }

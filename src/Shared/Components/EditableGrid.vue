@@ -87,7 +87,7 @@ export default {
     };
   },
   props: {
-    columns: {required: true }, // {title: String, field: String}
+    columns: {required: true }, // column object from gridEntityData.js
     data: { required: true }, // must pass in empty array if only blank rows
     totalRows: { type: Number, required: true }, // generates blank rows after data rows using the columns provided. Sets the initial value of the selector (see enableRowCountEdit)
     validations: Object, // vuelidate validations object, see /shared/validations.js for examples

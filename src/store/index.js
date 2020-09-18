@@ -40,7 +40,31 @@ export default new Vuex.Store({
         data: [],
         lastUpdated: null,
         getAction: "getRoles"
-      }
+      },
+      products: {
+        friendlyName: "Products",
+        data: [],
+        lastUpdated: null,
+        getAction: "getProducts"
+      },
+      vendors: {
+        friendlyName: "Vendors",
+        data: [],
+        lastUpdated: null,
+        getAction: "getVendors"
+      },
+      orderingMethods: {
+        friendlyName: "Ordering Methods",
+        data: [],
+        lastUpdated: null,
+        getAction: "getOrderingMethods"
+      },
+      locations: {
+        friendlyName: "Warehouse Locations",
+        data: [],
+        lastUpdated: null,
+        getAction: "getLocations"
+      },
     },
     employees: [],
     modal: {
@@ -154,7 +178,7 @@ export default new Vuex.Store({
         sbHttp
           .get_notify(
             `/api/Employee/GetEmployees${
-              totalOverwrite ? "" : "/?modifiedAfter=" + dateToSend
+              totalOverwrite ? "" : "?modifiedAfter=" + dateToSend
             }`,
             null,
             "There was an error fetching the Employees from the database."
@@ -162,6 +186,31 @@ export default new Vuex.Store({
           .then(res => {
             if (res.success) {
               commit("updateEntity",new UpdateEntitiesSettings("employees",res.data,totalOverwrite));
+            }
+            resolve();
+          });
+      });
+    },
+    getProducts({ commit }) {
+      const totalOverwrite = this.state.entities.products.lastUpdated
+        ? false
+        : true;
+      const dateToSend = kendo.toString(
+        new Date(this.state.entities.products.lastUpdated),
+        "s"
+      );
+      return new Promise(resolve => {
+        sbHttp
+          .get_notify(
+            `/api/Product/GetProducts${
+              totalOverwrite ? "" : "?modifiedAfter=" + dateToSend
+            }`,
+            null,
+            "There was an error fetching the Products from the database."
+          )
+          .then(res => {
+            if (res.success) {
+              commit("updateEntity",new UpdateEntitiesSettings("products",res.data,totalOverwrite));
             }
             resolve();
           });
@@ -177,7 +226,55 @@ export default new Vuex.Store({
           )
           .then(res => {
             if (res.success) {
-              commit("put_departments", res.data);
+              commit("updateEntity",new UpdateEntitiesSettings("departments",res.data));
+            }
+            resolve();
+          });
+      });
+    },
+    getVendors({ commit }) {
+      return new Promise(resolve => {
+        sbHttp
+          .get_notify(
+            "/api/Vendor/GetVendors",
+            null,
+            "There was an error fetching the Vendors from the database."
+          )
+          .then(res => {
+            if (res.success) {
+              commit("updateEntity",new UpdateEntitiesSettings("vendors",res.data));
+            }
+            resolve();
+          });
+      });
+    },
+    getOrderingMethods({ commit }) {
+      return new Promise(resolve => {
+        sbHttp
+          .get_notify(
+            "/api/Vendor/GetOrderingMethods",
+            null,
+            "There was an error fetching the Ordering Methods from the database."
+          )
+          .then(res => {
+            if (res.success) {
+              commit("updateEntity",new UpdateEntitiesSettings("orderingMethods",res.data));
+            }
+            resolve();
+          });
+      });
+    },
+    getLocations({ commit }) {
+      return new Promise(resolve => {
+        sbHttp
+          .get_notify(
+            "/api/Warehouse/GetWarehouseLocations",
+            null,
+            "There was an error fetching the Warehouse Locations from the database."
+          )
+          .then(res => {
+            if (res.success) {
+              commit("updateEntity",new UpdateEntitiesSettings("locations",res.data));
             }
             resolve();
           });
@@ -193,7 +290,7 @@ export default new Vuex.Store({
           )
           .then(res => {
             if (res.success) {
-              commit("put_roles", res.data);
+              commit("updateEntity",new UpdateEntitiesSettings("roles",res.data));
             }
             resolve();
           });
