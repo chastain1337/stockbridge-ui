@@ -16,10 +16,12 @@ import { DataSource, DataSourceInstaller } from '@progress/kendo-datasource-vue-
 import { Button,
   ButtonsInstaller } from '@progress/kendo-buttons-vue-wrapper'
 import notify from "@/Shared/notify"
+import lodash from "lodash"
 
 Vue.prototype.$http = Axios;
 Vue.prototype.kendo = window.kendo;
 
+window._ = lodash
 window.sb = {}
 window.sb.notify = notify;
 

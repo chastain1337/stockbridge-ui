@@ -78,19 +78,13 @@ export default {
       this.dropdownValue = e.dataItem.name;
       this.selectedEntityActions = {...e.dataItem.storeActions};
     },
-    handleSubmit() {
+    async handleSubmit() {
       this.submitting = true
       const upsertModels = this.gridData.filter(e => Object.values(e).every(v => v != null && v != '')).map( r => new this.upsertRequestModel(r));
       console.log(upsertModels);
-      this.$store.dispatch(this.selectedEntityActions.post,upsertModels)
-      .then( res => {
-        this.submitting = false
-        sb.notify.toast(`${res.data.data.length} object(s) created successfully.`,2000,"S")
-      })
-      .catch( res => {
-        this.submitting = false
-        sb.notify.toast(`Error(s): ${res.data.errors.join("\n")}.`,2000+res.data.errors.length*2000,"F")
-      })
+      await this.$store.dispatch(this.selectedEntityActions.post,upsertModels)
+      this.submitting = false
+      await this.getDataForEntity(this.selectedEntityActions.get);
     },
     dataChange(gridData) {
       this.totalRows = Math.max(gridData.length,this.totalRows)
@@ -157,15 +151,18 @@ export default {
       this.gridData = [];
 
     },
+    async getDataForEntity(storeActions) {
+      const actions = storeActions.split(",")
+        for (let i = 0; i < actions.length; i++) {
+          await this.$store.dispatch(actions[i]);
+        }
+    }
   },
   watch: {
     selectedEntityActions: async function (val) {
       if (val) {
         // Get data
-        const actions = this.selectedEntityActions.get.split(",")
-        for (let i = 0; i < actions.length; i++) {
-          await this.$store.dispatch(actions[i]);
-        }
+        await this.getDataForEntity(this.selectedEntityActions.get);
         this.refreshGridAfterDataLoad();
       }
     },
