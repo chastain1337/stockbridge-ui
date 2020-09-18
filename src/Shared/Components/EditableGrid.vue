@@ -60,9 +60,10 @@ Using this component:
               :data-col-index="colIndex"
               :data-cell-coordinates="`${rowIndex},${colIndex}`"
               :data-col-field="col.field"
-              contenteditable="true"
+              :contenteditable="col.readOnly ? 'false' : 'true'"
             >
-              <template v-if="allData[rowIndex][col.field]">{{allData[rowIndex][col.field]}}</template>
+              <template v-if="col.readOnly && col.calculation">{{col.calculation(row)}}</template>
+              <template v-else-if="allData[rowIndex][col.field] != null">{{allData[rowIndex][col.field]}}</template>
               <br v-else />
             </td>
           </tr>
@@ -87,7 +88,8 @@ export default {
     };
   },
   props: {
-    columns: {required: true }, // column object from gridEntityData.js
+    entityData: {required: true, type: Object},
+    //columns: {required: true }, // column object from gridEntityData.js
     data: { required: true }, // must pass in empty array if only blank rows
     totalRows: { type: Number, required: true }, // generates blank rows after data rows using the columns provided. Sets the initial value of the selector (see enableRowCountEdit)
     validations: Object, // vuelidate validations object, see /shared/validations.js for examples
@@ -97,6 +99,10 @@ export default {
     submitting: Boolean
   },
   methods: {
+    calculateColumn(row,calculation) {
+      const newVal = calculation(row);
+      return newVal;
+    },
     handleSubmit(e) {
       this.submitHandler();
     },
@@ -147,6 +153,13 @@ export default {
       const startingColIndex = Number(e.target.getAttribute("data-col-index"));
       const startingRow = Number(e.target.getAttribute("data-row-index"));
 
+      // Make sure we are not pasting into readOnly col
+      for (let i = startingColIndex; i < startingColIndex+pastedData[0].length; i++) {
+        if (this.columns[i].readOnly) {
+          return notify.popup({message: `You are attempting to paste into the ${this.columns[i].title} column, which is Read-Only and therefore cannot be modified.`});
+        }
+      }
+
       // Remove any completely blank rows
       pastedData = pastedData.filter((row) => row.every((cell) => cell !== ""));
 
@@ -188,20 +201,34 @@ export default {
     },
     handleKeyPress(e,newValue,rowIndex,colField,colIndex) {
       if (e.key === "Tab") {
-        console.log(e,newValue,rowIndex,colField,colIndex);
         e.preventDefault();
         e.target.blur();
-        document.getElementById("editable-table").rows[rowIndex+1].cells[colIndex+1].focus();
+        // select first cell of next row if on last column
+        if (colIndex === this.columns.length-1) {
+          document.getElementById("editable-table").rows[rowIndex+2].cells[0].focus();
+        } else {
+          document.getElementById("editable-table").rows[rowIndex+1].cells[colIndex+1].focus();
+        }
+        
         document.execCommand('selectall',false,null);
       }
     },
     cellBlurred(newValue, rowIndex, colField, colIndex) {
       if (this.allData[rowIndex][colField] !== newValue && newValue !== "") {
         this.valid = false;
-        const thisRow = { ...this.allData[rowIndex] };
+        const row = { ...this.allData[rowIndex] };
         const dataCopy = [...this.allData];
-        thisRow[colField] = newValue;
-        dataCopy[rowIndex] = thisRow;
+        row[colField] = newValue;
+        if (this.entityData.watch) {
+          if (Object.keys(this.entityData.watch).includes(colField)) {
+          for (let key in this.entityData.watch[colField]) {
+            row[key] = this.entityData.watch[colField][key](row)
+          }
+        }
+        }
+        
+
+        dataCopy[rowIndex] = row;
 
         this.updateParent(dataCopy);
       }
@@ -214,6 +241,17 @@ export default {
     createAllData() {
       const emptyRows = this.emptyRows(Math.max(this.totalRows,this.totalRowsLocal) - this.data.length);
       const dataCopy = [...this.data, ...emptyRows];
+
+      // Iterdate dataCopy and apply calculations to initialize data properly to only fields that are not BOTH calculated and read-only
+      this.columns.filter( c => c.calculation).forEach( column => {
+        let i = 0;
+        dataCopy.forEach( rowRef => {
+          const row = {...rowRef}
+          row[column.field] = column.calculation(row);
+          dataCopy[i] = {...row}
+          i++
+        })
+      });
       this.allData = dataCopy;
     },
     updateParent(newData) {
@@ -238,6 +276,25 @@ export default {
       },
     };
   },
+  computed: {
+    columns() {
+      let columns = []
+      const entityDataFields = {...this.entityData.fields};
+
+      for (let field in entityDataFields) {
+        if (!entityDataFields[field].hidden ) {
+          columns.push({
+                field: field,
+                title: entityDataFields[field].friendlyName,
+                readOnly: !!entityDataFields[field].readOnly,
+                calculation: entityDataFields[field].calculation || null
+              });
+        }
+      }
+    
+      return columns
+    }
+  }
 };
 </script>
 

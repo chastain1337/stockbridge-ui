@@ -22,7 +22,7 @@
         <grid
           :enableBulkPaste="true"
           :data="gridData"
-          :columns="gridColumns"
+          :entityData="entityData"
           :totalRows="totalRows"
           @dataChange="dataChange"
           :validations="entityValidations"
@@ -59,6 +59,22 @@ export default {
           name: "Departments",
           storeActions: {get: "getDepartments", post: "upsertDepartments"}
         },
+        {
+          name: "Ordering Methods",
+          storeActions: {get: "getOrderingMethods", post: ""}
+        },
+        {
+          name: "Warehouse Locations",
+          storeActions: {get: "getLocations", post: ""}
+        },
+        {
+          name: "Vendors",
+          storeActions: {get: "getVendors", post: ""}
+        },
+        {
+          name: "Products",
+          storeActions: {get: "getProducts,getVendors", post: ""}
+        },
       ],
       selectedEntityActions: {get: "", post: ""},
       gridData: null,
@@ -70,7 +86,8 @@ export default {
       entityValidations: null,
       dropdownValue: "",
       upsertRequestModel: null,
-      submitting: false
+      submitting: false,
+      entityData: {}
     };
   },
   methods: {
@@ -103,52 +120,63 @@ export default {
     },
     refreshGridAfterDataLoad() {
       // Does not update the store with new data
-      let thisValidationObject;
-      let sampleData = {};
-      let columns = [];
+      let thisValidationObject,entityData;
 
-      let firstRowOfData, entityData
       switch (this.selectedEntityActions.get) {
         // Define sampleData based on entity selected
         case "getEmployees,getRoles,getDepartments":
-          firstRowOfData = { ...this.$store.state.entities.employees.data[0] };
           entityData = { ...gridEntityData.employees };
           this.upsertRequestModel = apiModels.UpsertEmployeeRequest
           thisValidationObject = allValidations.employeeValidations;
           break;
           
         case "getRoles":
-          firstRowOfData = { ...this.$store.state.entities.roles.data[0] };
+          
           entityData = { ...gridEntityData.roles };
           this.upsertRequestModel = apiModels.UpsertRoleRequest
           thisValidationObject = allValidations.roleValidations;
           break;
 
         case "getDepartments":
-          firstRowOfData = { ...this.$store.state.entities.departments.data[0] };
+          
           entityData = { ...gridEntityData.departments };
           this.upsertRequestModel = apiModels.UpsertDepartmentRequest
           thisValidationObject = allValidations.departmentValidations;
           break;
+
+        case "getOrderingMethods":
+          entityData = { ...gridEntityData.orderingMethods };
+          //this.upsertRequestModel = apiModels.UpsertDepartmentRequest
+          //thisValidationObject = allValidations.departmentValidations;
+          break;
+
+        case "getLocations":
+          entityData = { ...gridEntityData.locations };
+          // this.upsertRequestModel = apiModels.UpsertDepartmentRequest
+          // thisValidationObject = allValidations.departmentValidations;
+          break;
+        
+        case "getVendors":
+          entityData = { ...gridEntityData.vendors };
+          // this.upsertRequestModel = apiModels.UpsertDepartmentRequest
+          // thisValidationObject = allValidations.departmentValidations;
+          break;
+
+        case "getProducts,getVendors":
+          entityData = { ...gridEntityData.products };
+          // this.upsertRequestModel = apiModels.UpsertDepartmentRequest
+          // thisValidationObject = allValidations.departmentValidations;
+          break;
       }
 
-      
-      const entityDataFields = {...entityData.fields}
-      delete entityDataFields.id; // no ID field on creation
-
-      for (let field in entityDataFields) {
-        if (firstRowOfData[field] != undefined ) {
-          columns.push({
-                field: field,
-                title: entityDataFields[field].friendlyName,
-              });
-            sampleData[field] = null;
-        }
-      }
-    
-      this.entityValidations = thisValidationObject;
-      this.gridColumns = columns;
+      this.entityData = entityData;
       this.gridData = [];
+      this.entityValidations = thisValidationObject;
+
+      //const entityDataFields = {...entityData.fields}
+      //delete entityDataFields.id; // no ID field on creation
+
+           
 
     },
     async getDataForEntity(storeActions) {
