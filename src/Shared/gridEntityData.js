@@ -81,13 +81,13 @@ export default {
             id: { friendlyName: "ID", hidden: true},
             sku: { friendlyName: "SKU"},
             description: { friendlyName: "Description"},
-            partNumber: { friendlyName: "Part Number"},
+            partNumber: { friendlyName: "Part Number",},
             orderingPartNumber: { friendlyName: "Ordering Part Number"},
             primaryVendor: { friendlyName: "Primary Vendor"},
             secondaryVendor: { friendlyName: "Secondary Vendor"},
-            lastUnitCost: { friendlyName: "Last Unit Cost"},
+            lastUnitCost: { friendlyName: "Last Unit Cost", calculation: (row) => 0.00},
             location: { friendlyName: "Location ID"},
-            casePack: { friendlyName: "Case Pack"},
+            casePack: { friendlyName: "Case Pack", calculation: (row) => 1},
             length_IN: { friendlyName: "Length (IN.)"},
             width_IN: { friendlyName: "Width (IN.)"},
             height_IN: { friendlyName: "Height (IN.)"},
@@ -95,12 +95,17 @@ export default {
             minimum: { friendlyName: "Min."},
             maximum: { friendlyName: "Max"},
             shelfCount: { friendlyName: "Shelf Count"},
-            pending: { friendlyName: "Pending"},
-            onOrder: { friendlyName: "On Order"},
-            available: { friendlyName: "Available"},
-            toOrderQuantity: { friendlyName: "To Order Quantity"},
-            toOrderAmount: { friendlyName: "To Order Amount"},
-
+            pending: { friendlyName: "Pending", hidden: true},
+            onOrder: { friendlyName: "On Order", hidden: true},
+            available: { friendlyName: "Available", hidden: true},
+            toOrderQuantity: { friendlyName: "To Order Quantity", hidden: true},
+            toOrderAmount: { friendlyName: "To Order Amount", hidden: true},
+        },
+        watch: {
+            partNumber: (row) => {
+                if (row.orderingPartNumber && row.orderingPartNumber.trim().length > 0) return row.orderingPartNumber
+                return row.partNumber
+            }
         }
     },
     orderingMethods: {
@@ -133,7 +138,7 @@ export default {
             email: { friendlyName: "Email"},
             accountNumber: { friendlyName: "Account Number"},
             phoneNumber: { friendlyName: "Phone Number"},
-            willDropForUs: { friendlyName: "Will Drop Ship For Us"},
+            willDropShipForUs: { friendlyName: "Will Drop Ship For Us"},
             willChargeFreightForDropShip: { friendlyName: "Will Charge Freight For Drop Ship"},
             willChargeFreightForOrders: { friendlyName: "Will Charge Freight For Orders"},
             leadTimeBusinessDays: { friendlyName: "Lead Time (Business Days)"},
