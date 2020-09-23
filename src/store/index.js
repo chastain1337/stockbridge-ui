@@ -93,7 +93,6 @@ export default new Vuex.Store({
       }
     },
     updateEntity(state, {entityKey,newEntities,totalOverwrite}) {
-      console.log(entityKey,newEntities,totalOverwrite)
       state.entities[entityKey].lastUpdated = Date.now();
       if (totalOverwrite) {
         state.entities[entityKey].data = [...newEntities];
@@ -321,6 +320,50 @@ export default new Vuex.Store({
             "/api/Employee/UpsertDepartments",
             departments,
             "Department(s) updated!"
+          )
+          .then(resolve());
+      });
+    },
+    upsertOrderingMethods({ commit }, methods) {
+      return new Promise(resolve => {
+        sbHttp
+          .post_notify(
+            "/api/Vendor/UpsertOrderingMethods",
+            methods,
+            "Ordering Methods(s) updated!"
+          )
+          .then(resolve());
+      });
+    },
+    upsertWarehouseLocations({ commit }, location) {
+      return new Promise(resolve => {
+        sbHttp
+          .post_notify(
+            "/api/Warehouse/UpsertWarehouseLocations",
+            location,
+            "Location(s) updated!"
+          )
+          .then(resolve());
+      });
+    },
+    upsertVendors({ commit }, vendors) {
+      return new Promise(resolve => {
+        sbHttp
+          .post_notify(
+            "/api/Vendor/UpsertVendors",
+            vendors,
+            "Vendor(s) updated!"
+          )
+          .then(resolve());
+      });
+    },
+    upsertProducts({ commit }, products) {
+      return new Promise(resolve => {
+        sbHttp
+          .post_notify(
+            "/api/Products/UpsertProducts",
+            products,
+            "Product(s) updated!"
           )
           .then(resolve());
       });

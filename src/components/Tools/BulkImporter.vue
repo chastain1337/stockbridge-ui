@@ -25,10 +25,12 @@
           :entityData="entityData"
           :totalRows="totalRows"
           @dataChange="dataChange"
+          @columnChange="columnChange"
           :validations="entityValidations"
           :buttonsToInclude="['ALL']"
           :submitHandler="handleSubmit"
           :submitting="submitting"
+          :allowCustomFields="allowCustomFields"
         />
       </div>
     </div>
@@ -49,31 +51,38 @@ export default {
       bulkImportOptions: [
         {
           name: "Employees",
+          allowCustomFields: false,
           storeActions: {get: "getEmployees,getRoles,getDepartments", post: "upsertEmployees"}
         },
         {
           name: "Roles",
+          allowCustomFields: false,
           storeActions: {get: "getRoles", post: "upsertRoles"}
         },
         {
           name: "Departments",
+          allowCustomFields: false,
           storeActions: {get: "getDepartments", post: "upsertDepartments"}
         },
         {
           name: "Ordering Methods",
-          storeActions: {get: "getOrderingMethods", post: ""}
+          allowCustomFields: false,
+          storeActions: {get: "getOrderingMethods", post: "upsertOrderingMethods"}
         },
         {
           name: "Warehouse Locations",
-          storeActions: {get: "getLocations", post: ""}
+          allowCustomFields: false,
+          storeActions: {get: "getLocations", post: "upsertWarehouseLocations"}
         },
         {
           name: "Vendors",
-          storeActions: {get: "getVendors", post: ""}
+          allowCustomFields: true,
+          storeActions: {get: "getVendors,getOrderingMethods", post: "upsertVendors"}
         },
         {
           name: "Products",
-          storeActions: {get: "getProducts,getVendors", post: ""}
+          allowCustomFields: true,
+          storeActions: {get: "getProducts,getVendors,getLocations", post: "upsertProducts"}
         },
       ],
       selectedEntityActions: {get: "", post: ""},
@@ -87,18 +96,53 @@ export default {
       dropdownValue: "",
       upsertRequestModel: null,
       submitting: false,
-      entityData: {}
+      entityData: {},
+      allowCustomFields: false
     };
   },
   methods: {
     handleDropdownChange(e) {
       this.dropdownValue = e.dataItem.name;
       this.selectedEntityActions = {...e.dataItem.storeActions};
+      this.allowCustomFields = e.dataItem.allowCustomFields
+
     },
     async handleSubmit() {
       this.submitting = true
-      const upsertModels = this.gridData.filter(e => Object.values(e).every(v => v != null && v != '')).map( r => new this.upsertRequestModel(r));
-      console.log(upsertModels);
+      let upsertModels = [];
+      const filteredData = this.gridData.filter(o => {
+        if (o.customFields) {
+          if (Object.values(o.customFields).join('').length > 0) {
+            return true
+          } else {
+            const oCopy = {...o}
+            delete oCopy.customFields
+            return Object.values(oCopy).join('').length > 0
+          }
+        } else {
+          return Object.values(o).join('').length > 0
+        }
+      });
+      filteredData.forEach( row => {
+        if (!this.allowCustomFields) {
+          upsertModels.push(new this.upsertRequestModel(row))
+        } else {
+          let customFields = []
+          this.gridColumns.forEach( col => {
+            if (col.custom) {
+              const cf = { 
+                friendlyName: col.title,
+                systemName: col.field,
+                description: col.description,
+                value: row.customFields[col.field]
+              }
+              customFields.push(new apiModels.GenericCustomField(cf));
+            }
+          })
+          // customFields = [GenericCustomField]
+          upsertModels.push(new this.upsertRequestModel(row,customFields));
+        }
+      });
       await this.$store.dispatch(this.selectedEntityActions.post,upsertModels)
       this.submitting = false
       await this.getDataForEntity(this.selectedEntityActions.get);
@@ -106,6 +150,9 @@ export default {
     dataChange(gridData) {
       this.totalRows = Math.max(gridData.length,this.totalRows)
       this.gridData = gridData;
+    },
+    columnChange(newColumns) {
+      this.gridColumns = newColumns
     },
     openModal() {
       this.modalVisible = true;
@@ -146,26 +193,26 @@ export default {
 
         case "getOrderingMethods":
           entityData = { ...gridEntityData.orderingMethods };
-          //this.upsertRequestModel = apiModels.UpsertDepartmentRequest
-          //thisValidationObject = allValidations.departmentValidations;
+          this.upsertRequestModel = apiModels.UpsertOrderingMethodRequest
+          thisValidationObject = allValidations.orderingMethodValidations
           break;
 
         case "getLocations":
           entityData = { ...gridEntityData.locations };
-          // this.upsertRequestModel = apiModels.UpsertDepartmentRequest
-          // thisValidationObject = allValidations.departmentValidations;
+           this.upsertRequestModel = apiModels.UpsertLocationRequest
+            thisValidationObject = allValidations.locationValidations;
           break;
         
-        case "getVendors":
+        case "getVendors,getOrderingMethods":
           entityData = { ...gridEntityData.vendors };
-          // this.upsertRequestModel = apiModels.UpsertDepartmentRequest
-          // thisValidationObject = allValidations.departmentValidations;
+           this.upsertRequestModel = apiModels.UpsertVendorRequest
+          thisValidationObject = allValidations.vendorValidations;
           break;
 
-        case "getProducts,getVendors":
+        case "getProducts,getVendors,getLocations":
           entityData = { ...gridEntityData.products };
-          // this.upsertRequestModel = apiModels.UpsertDepartmentRequest
-          // thisValidationObject = allValidations.departmentValidations;
+           this.upsertRequestModel = apiModels.UpsertProductRequest
+           thisValidationObject = allValidations.productValidations;
           break;
       }
 

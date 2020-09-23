@@ -13,18 +13,21 @@ import Axios from "axios";
  * @returns {DbResponse}
  */
 const _constructReturnObject = err => {
-  if (err.reponse) {
+  if (err.response) {
     // This came from the server
     if (err.response.data.errors) {
-      //This is an intentional DbResponse that contains errors
-      return err.response.data;
+      if (err.response.data.success != null) {
+        //This is an intentional DbResponse that contains errors
+        return err.response.data;
+      } else {
+        return { data: null, success: false, errors: [err.response.data.title]}
+      }
     } else {
       // This is an error returned from a different issue
       return { data: null, success: false, errors: [err.data] };
     }
   } else {
     // This came form javascript
-    console.error(err);
     return { data: null, success: false, errors: [`${err}`] };
   }
 };
@@ -37,6 +40,7 @@ const _constructReturnObject = err => {
  */
 const _failToast = (returnObj, err,failMessage) => {
     const errMessages = returnObj.errors.join(" | ");
+    console.error(errMessages);
     const toastMessage = failMessage.replace("!errs!", errMessages);
     const headerMessage = err.response
       ? `${err.response.status} - ${err.response.statusText}`

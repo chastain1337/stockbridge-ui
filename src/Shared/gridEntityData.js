@@ -86,14 +86,14 @@ export default {
             primaryVendor: { friendlyName: "Primary Vendor"},
             secondaryVendor: { friendlyName: "Secondary Vendor"},
             lastUnitCost: { friendlyName: "Last Unit Cost", calculation: (row) => 0.00},
-            location: { friendlyName: "Location ID"},
+            location: { friendlyName: "Location Name"},
             casePack: { friendlyName: "Case Pack", calculation: (row) => 1},
             length_IN: { friendlyName: "Length (IN.)"},
             width_IN: { friendlyName: "Width (IN.)"},
             height_IN: { friendlyName: "Height (IN.)"},
             weight_OZ: { friendlyName: "Weight (OZ.)"},
-            minimum: { friendlyName: "Min."},
-            maximum: { friendlyName: "Max"},
+            minimum: { friendlyName: "Min.", calculation: (row) => 0},
+            maximum: { friendlyName: "Max", calculation: (row) => 0},
             shelfCount: { friendlyName: "Shelf Count"},
             pending: { friendlyName: "Pending", hidden: true},
             onOrder: { friendlyName: "On Order", hidden: true},
@@ -121,11 +121,28 @@ export default {
             aisle: { friendlyName: "Aisle"},
             section: { friendlyName: "Section"},
             shelf: { friendlyName: "Shelf"},
-            name: { friendlyName: "Name", readOnly: true, calculation: row => {
-                if (row.aisle && row.section && row.shelf) return `${row.aisle}${row.section}${row.shelf}`
-                return row.customName;
-            }},
+            name: { friendlyName: "Name", readOnly: true },
             customName: { friendlyName: "Custom Name"},
+        },
+        watch: {
+            aisle: {
+                name: row => {
+                    if (row.aisle && row.section && row.shelf) return `${row.aisle}${row.section}${row.shelf}`
+                    return row.customName;
+                }
+            },
+            shelf: {
+                name: row => {
+                    if (row.aisle && row.section && row.shelf) return `${row.aisle}${row.section}${row.shelf}`
+                    return row.customName;
+                }
+            },
+            section: {
+                name: row => {
+                    if (row.aisle && row.section && row.shelf) return `${row.aisle}${row.section}${row.shelf}`
+                    return row.customName;
+                }
+            }
         }
     },
     vendors: {
@@ -143,6 +160,14 @@ export default {
             willChargeFreightForOrders: { friendlyName: "Will Charge Freight For Orders"},
             leadTimeBusinessDays: { friendlyName: "Lead Time (Business Days)"},
             useAutoOrdering: { friendlyName: "Use Auto Ordering"},
+        }
+    },
+    genericCustomField: {
+        fields: {
+            friendlyName: {},
+            systemName: {},
+            description: {},
+            value: {},
         }
     }
 }

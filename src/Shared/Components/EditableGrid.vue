@@ -39,12 +39,15 @@ Using this component:
       <div class="col-1" v-if="buttonsToInclude.includes('CLEAR') || buttonsToInclude.includes('ALL')">
         <button class="btn btn-danger" @click="handleClear" :disabled="!this.allData">Clear</button>
       </div>
+      <div class="col-2" v-if="allowCustomFields">
+        <button class="btn btn-secondary" @click="enableShowNewColumnModal" :disabled="!this.allData">Add New Column</button>
+      </div>
     </div >
     <div class="row" v-if="!!this.allData">
       <table class="table table-bordered table-sm table-hover table-striped" id="editable-table">
         <thead>
           <tr>
-            <th v-for="col in columns" :key="col.field">{{ col.title }}</th>
+            <th v-for="col in columns" :key="col.field" :class="col.custom ? 'custom-column' : null" :title="col.custom ? 'Click to remove column.' : null" @click="col.custom ? removeCustomColumn(col.field, col.title) : null">{{ col.title }}</th>
           </tr>
         </thead>
         <tbody>
@@ -62,14 +65,47 @@ Using this component:
               :data-col-field="col.field"
               :contenteditable="col.readOnly ? 'false' : 'true'"
             >
-              <template v-if="col.readOnly && col.calculation">{{col.calculation(row)}}</template>
-              <template v-else-if="allData[rowIndex][col.field] != null">{{allData[rowIndex][col.field]}}</template>
+              <template v-if="allData[rowIndex][col.field] != null">{{allData[rowIndex][col.field]}}</template>
+              <template v-else-if="allData[rowIndex].customFields != null && allData[rowIndex].customFields[col.field] != null">{{allData[rowIndex].customFields[col.field]}}</template>
               <br v-else />
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+  
+  <k-dialog
+      v-if="showCustomColumnModal"
+      :modal="true"
+      @close="handleCloseCustomColumnModal"
+      :width="500"
+      :title="'Add Custom Column'"
+    >
+      <div>
+          <h5>Add Custom Column</h5>
+          <div style="color: darkred;" v-if="customColumnErrorMessage">{{ customColumnErrorMessage }}</div>
+          <div>
+            <div>New Column Friendly Name:</div>
+            <input type="text" v-model="newColumnName" />
+          </div>
+
+          <div>
+            <div>New Column Description:</div>
+            <input type="text" v-model="newColumnDescription" />
+          </div>
+          
+          <div>
+            <div>New Column System Name:</div>
+            <input readonly v-model="newColumnSystemName" />
+          </div>
+      </div>
+
+      <dialog-actions-bar>
+        <button class="k-button" style="background-color: #dddddd" :disabled="customColumnErrorMessage != ''" @click="handleCloseCustomColumnModal">Add</button>
+        <button class="k-button" style="background-color: #dddddd" @click="showCustomColumnModal=false">Cancel</button>
+      </dialog-actions-bar>
+    </k-dialog>
+  
   </div>
 </template>
 
@@ -84,7 +120,11 @@ export default {
     return {
       allData: null,
       totalRowsLocal: this.totalRows,
-      valid: false
+      valid: false,
+      customColumns: [],
+      newColumnName: "",
+      newColumnDescription: "",
+      showCustomColumnModal: false,
     };
   },
   props: {
@@ -96,9 +136,58 @@ export default {
     enableBulkPaste: { type: Boolean, default: false }, // whether paste events should be auto-parsed and spread across the grid
     buttonsToInclude: {type: Array, default: []}, // toolbar buttons to include. Valid values are: "ROWCOUNT","SUBMIT","VALIDATE","COPY","CLEAR". Can also use "ALL" to enable all buttons
     submitHandler: Function, // only required if including submit button, the callback action to perform in the parent component when "Submit" is clicked. Note that the current data is not passed up because it the two components are guaranteed to have data in sync
-    submitting: Boolean
+    submitting: Boolean,
+    allowCustomFields: { type: Boolean, default: false }
   },
   methods: {
+    removeCustomColumn(columnField, columnTitle) {
+      if (!window.confirm(`Delete the ${columnTitle} column?`)) return;
+      const customColumns = [...this.customColumns];
+      const allData = [...this.allData];
+      customColumns.splice(customColumns.findIndex(c => c.field === columnField),1);
+      this.customColumns = customColumns;
+      
+      let i = 0;
+      allData.forEach( row => {
+        const rowCopy = {...row}
+        const thisCustomFields = {...rowCopy.customFields}
+        delete thisCustomFields[columnField]
+        rowCopy.customFields = {...thisCustomFields}
+        allData[i] = rowCopy
+        i++
+      })
+      this.updateParent(allData,this.columns);
+    },
+    addNewColumn() {
+      const customColumns = [...this.customColumns]
+      customColumns.push(
+        {field: this.newColumnSystemName, title: this.newColumnName, custom: true, description: this.newColumnDescription}
+        );
+      this.customColumns = customColumns;
+
+      // add that field to CustomFields key on entity
+      const allData = [...this.allData]
+      let rowIdx = 0
+      allData.forEach( row => {
+        const rowCopy = {...row}
+        if (!rowCopy.customFields) {
+          rowCopy.customFields = {}
+        }
+        rowCopy.customFields[this.newColumnSystemName] = null;
+        allData[rowIdx] = rowCopy;
+        rowIdx++
+      });
+      this.updateParent(allData,this.columns);
+    },
+    handleCloseCustomColumnModal() {
+      this.showCustomColumnModal = false;
+      this.addNewColumn();
+    },
+    enableShowNewColumnModal() {
+      this.newColumnName = "";
+      this.newColumnDescription = "";
+      this.showCustomColumnModal = true;
+    },
     calculateColumn(row,calculation) {
       const newVal = calculation(row);
       return newVal;
@@ -120,17 +209,21 @@ export default {
       let validFlag = true;
       const table = document.getElementById("editable-table");
       for (let row = 0; row < this.allData.length; row++) {
-        const smushedData = Object.values(this.allData[row]).join('')
-        if (this.$v.allData.$each[row].$invalid && smushedData.length > 0) {
+        const rowHasData = this.rowHasData({...this.allData[row]});
+        if (rowHasData && this.$v.allData.$each[row].$invalid) {
           validFlag = false;
           // Loop through columns and check valid, change tds based on that
           let colIdx = 0
           this.columns.forEach( col => {
-            if (this.$v.allData.$each[row][col.field].$invalid && this.$v.allData.$each[row][col.field].$model) {
+            if (!col.custom && rowHasData && this.$v.allData.$each[row][col.field].$invalid) {
               table.rows[row+1].cells[colIdx].style.backgroundColor = "red";
             }
             colIdx++
           });
+        } else {
+          for (let i = 0; i < table.rows[row+1].cells.length; i++) {
+            table.rows[row+1].cells[i].style.backgroundColor = null;
+          }
         }
       }
       this.valid = validFlag
@@ -153,6 +246,15 @@ export default {
       const startingColIndex = Number(e.target.getAttribute("data-col-index"));
       const startingRow = Number(e.target.getAttribute("data-row-index"));
 
+      // Remove any completely blank rows
+      pastedData = pastedData.filter( (row) => row.some((cell) => cell != null && cell != ""));
+      
+      // Make sure data fits in columns
+      const remainingColumns = this.columns.length - startingColIndex;
+      if (pastedData[0].length > remainingColumns) {
+        return notify.popup({message: `You have pasted ${pastedData[0].length} columns in a space where only ${remainingColumns} can be filled.`})       
+      }
+
       // Make sure we are not pasting into readOnly col
       for (let i = startingColIndex; i < startingColIndex+pastedData[0].length; i++) {
         if (this.columns[i].readOnly) {
@@ -160,14 +262,7 @@ export default {
         }
       }
 
-      // Remove any completely blank rows
-      pastedData = pastedData.filter((row) => row.every((cell) => cell !== ""));
-
-      // Make sure data fits in columns
-      const remainingColumns = this.columns.length - startingColIndex;
-      if (pastedData[0].length > remainingColumns) {
-        return notify.popup({message: `You have pasted ${pastedData[0].length} columns in a space where only ${remainingColumns} can be filled.`})       
-      }
+      this.valid = false;     
 
       // Strech all data to fit rows
       const rowsToAdd =
@@ -185,6 +280,13 @@ export default {
         pastedRow.forEach((pastedCol) => {
           const colHeader = this.columns[startingColIndex + i].field;
           thisRow[colHeader] = pastedCol;
+          if (this.entityData.watch) {
+            if (Object.keys(this.entityData.watch).includes(colHeader)) {
+              for (let key in this.entityData.watch[colHeader]) {
+                thisRow[key] = this.entityData.watch[colHeader][key](thisRow)
+              }
+            }
+          }
           i++;
         });
 
@@ -214,11 +316,18 @@ export default {
       }
     },
     cellBlurred(newValue, rowIndex, colField, colIndex) {
-      if (this.allData[rowIndex][colField] !== newValue && newValue !== "") {
+      if (this.allData[rowIndex][colField] !== newValue) {
         this.valid = false;
         const row = { ...this.allData[rowIndex] };
         const dataCopy = [...this.allData];
-        row[colField] = newValue;
+        if (Object.keys(row).includes(colField)) {
+          // this is not a custom column
+          row[colField] = newValue;
+        } else {
+          // this is a custom column
+          row.customFields[colField] = newValue;
+        }
+        
         if (this.entityData.watch) {
           if (Object.keys(this.entityData.watch).includes(colField)) {
           for (let key in this.entityData.watch[colField]) {
@@ -256,7 +365,20 @@ export default {
     },
     updateParent(newData) {
       this.$emit("dataChange", newData);
+      this.$emit("columnChange", this.columns);
     },
+    rowHasData(row) {
+       if (row.customFields) {
+         if (Object.values(row.customFields).join('').length > 0) {
+           return true
+         } else {
+           delete row.customFields
+           return Object.values(row).join('').length > 0
+         }
+       } else {
+         return Object.values(row).join('').length > 0
+       }
+    }
   },
   mounted() {
     if (this.data) this.createAllData();
@@ -277,6 +399,24 @@ export default {
     };
   },
   computed: {
+    
+    customColumnErrorMessage() {
+      if (this.newColumnName.trim().length === 0) {
+        return "You must enter a column name."
+      }
+
+      if (this.newColumnDescription.trim().length === 0) {
+        return "You must enter a column description."
+      }
+      
+      if (this.customColumns.findIndex( c => c.field === this.newColumnSystemName) > -1) {
+        return "This column already exists."
+      }
+      return ''
+    },
+    newColumnSystemName() {
+      return this.newColumnName.replace(/ /g,'');
+    },
     columns() {
       let columns = []
       const entityDataFields = {...this.entityData.fields};
@@ -291,7 +431,13 @@ export default {
               });
         }
       }
-    
+
+      if (this.allowCustomFields) {
+        this.customColumns.forEach( col => {
+          columns.push({...col});
+        });
+      }
+          
       return columns
     }
   }
@@ -302,4 +448,12 @@ export default {
 td {
   line-height: 1;
 }
+
+.custom-column:hover {
+  
+  cursor: url(~@/assets/cursor-delete-32.png) 9 0, pointer;
+  
+}
 </style>
+
+

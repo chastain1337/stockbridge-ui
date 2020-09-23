@@ -7,11 +7,13 @@ import {
   numeric,
   decimal,
   integer,
-  minValue
+  minValue,
+  maxLength
 } from "vuelidate/lib/validators";
 
 import store from "@/store";
 
+const isNullableBool = v => v === null || ["TRUE", "FALSE",""].includes(v.toUpperCase());
 const isBool = v => ["TRUE", "FALSE"].includes(v.toUpperCase());
 const validDepartment = v => store.state.entities.departments.data.findIndex(d => d.name === v) > -1
 const validRole = v => store.state.entities.roles.data.findIndex(d => d.name === v) > -1
@@ -102,8 +104,8 @@ export default {
         width_IN: {decimal},
         height_IN: {decimal},
         weight_OZ: {decimal},
-        minimum: {integer},
-        maximum: {integer},
+        minimum: {integer, required},
+        maximum: {integer, required},
         shelfCount: {integer},
     },
     orderingMethodValidations: {
@@ -112,7 +114,7 @@ export default {
     locationValidations: {
         quickPick: { integer },
         aisle: { integer },
-        section: {alpha },
+        section: {alpha, maxLength: maxLength(2) },
         shelf: {integer},
         name: {required},
         customName: {maxLength: maxLength(50)}
@@ -125,9 +127,9 @@ export default {
         email: {email},
         accountNumber: {},
         phoneNumber: {},
-        willDropShipForUs: {isBool},
-        willChargeFreightForDropShip: {isBool},
-        willChargeFreightForOrders: {isBool},
+        willDropShipForUs: {isNullableBool},
+        willChargeFreightForDropShip: {isNullableBool},
+        willChargeFreightForOrders: {isNullableBool},
         leadTimeBusinessDays: {integer},
         useAutoOrdering: {required, isBool},
     }
