@@ -361,7 +361,7 @@ export default new Vuex.Store({
       return new Promise(resolve => {
         sbHttp
           .post_notify(
-            "/api/Products/UpsertProducts",
+            "/api/Product/UpsertProducts",
             products,
             "Product(s) updated!"
           )

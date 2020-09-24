@@ -15,11 +15,11 @@ import store from "@/store";
 
 const isNullableBool = v => v === null || ["TRUE", "FALSE",""].includes(v.toUpperCase());
 const isBool = v => ["TRUE", "FALSE"].includes(v.toUpperCase());
-const validDepartment = v => store.state.entities.departments.data.findIndex(d => d.name === v) > -1
-const validRole = v => store.state.entities.roles.data.findIndex(d => d.name === v) > -1
-const validVendor = v => store.state.entities.vendors.data.findIndex(d => d.name === v) > -1
-const validOrderingMethod = v => store.state.entities.orderingMethods.data.findIndex(d => d.methodName === v) > -1
-const validLocation = v => store.state.entities.locations.data.findIndex(d => d.name === v) > -1
+const validDepartment = v => v === null || v === "" || store.state.entities.departments.data.findIndex(d => d.name === v) > -1
+const validRole = v => v === null || v === "" || store.state.entities.roles.data.findIndex(d => d.name === v) > -1
+const validVendor = v => v === null || v === "" || store.state.entities.vendors.data.findIndex(d => d.code === v) > -1
+const validOrderingMethod = v => v === null || v === "" || store.state.entities.orderingMethods.data.findIndex(d => d.methodName === v) > -1
+const validLocation = v => v === null || v === "" || store.state.entities.locations.data.findIndex(d => d.name === v) > -1
 
 
 
@@ -98,7 +98,7 @@ export default {
         primaryVendor: {validVendor},
         secondaryVendor: {validVendor},
         lastUnitCost: { required },
-        location: { validLocation },
+        location: { required, validLocation },
         casePack: {required},
         length_IN: {decimal},
         width_IN: {decimal},
@@ -106,7 +106,7 @@ export default {
         weight_OZ: {decimal},
         minimum: {integer, required},
         maximum: {integer, required},
-        shelfCount: {integer},
+        shelfCount: {integer, required},
     },
     orderingMethodValidations: {
         methodName: { required },

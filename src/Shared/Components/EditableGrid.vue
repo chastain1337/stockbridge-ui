@@ -330,10 +330,10 @@ export default {
         
         if (this.entityData.watch) {
           if (Object.keys(this.entityData.watch).includes(colField)) {
-          for (let key in this.entityData.watch[colField]) {
-            row[key] = this.entityData.watch[colField][key](row)
+            for (let key in this.entityData.watch[colField]) {
+              row[key] = this.entityData.watch[colField][key](row)
+            }
           }
-        }
         }
         
 

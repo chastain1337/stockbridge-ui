@@ -120,7 +120,7 @@ class UpsertProductRequest {
      * @param {productFields} product 
      * @param {[GenericCustomField]} customFields
      */
-    constructor(product) {
+    constructor(product,customFields) {
         this.ID = product.id
         this.SKU = product.sku
         this.Description = product.description

@@ -85,15 +85,15 @@ export default {
             orderingPartNumber: { friendlyName: "Ordering Part Number"},
             primaryVendor: { friendlyName: "Primary Vendor"},
             secondaryVendor: { friendlyName: "Secondary Vendor"},
-            lastUnitCost: { friendlyName: "Last Unit Cost", calculation: (row) => 0.00},
+            lastUnitCost: { friendlyName: "Last Unit Cost"},
             location: { friendlyName: "Location Name"},
-            casePack: { friendlyName: "Case Pack", calculation: (row) => 1},
+            casePack: { friendlyName: "Case Pack"},
             length_IN: { friendlyName: "Length (IN.)"},
             width_IN: { friendlyName: "Width (IN.)"},
             height_IN: { friendlyName: "Height (IN.)"},
             weight_OZ: { friendlyName: "Weight (OZ.)"},
-            minimum: { friendlyName: "Min.", calculation: (row) => 0},
-            maximum: { friendlyName: "Max", calculation: (row) => 0},
+            minimum: { friendlyName: "Min."},
+            maximum: { friendlyName: "Max"},
             shelfCount: { friendlyName: "Shelf Count"},
             pending: { friendlyName: "Pending", hidden: true},
             onOrder: { friendlyName: "On Order", hidden: true},
@@ -102,9 +102,11 @@ export default {
             toOrderAmount: { friendlyName: "To Order Amount", hidden: true},
         },
         watch: {
-            partNumber: (row) => {
-                if (row.orderingPartNumber && row.orderingPartNumber.trim().length > 0) return row.orderingPartNumber
-                return row.partNumber
+            partNumber: {
+                orderingPartNumber: (row) => {
+                    if (row.orderingPartNumber && row.orderingPartNumber.trim().length > 0) return row.orderingPartNumber
+                    return row.partNumber
+                }
             }
         }
     },
