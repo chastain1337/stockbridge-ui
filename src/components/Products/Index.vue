@@ -19,7 +19,7 @@
             
         <div class="mt-3">
             <div v-if="fields">
-                <card v-for="field in visibleFields" :data-field="field.field" :key="field.field" :field="field" ref="visibleFields"></card>
+                <card v-for="field in fields" v-show="field.visible" :data-field="field.field" :key="field.field" :field="field" ref="fields"></card>
             </div>
             <div v-else style="font-size: 14pt">
                 <div style="width: 14pt; height: 14pt;" class="spinner-border" role="status"></div> 
@@ -110,13 +110,28 @@ export default {
         handleOpen() {
             this.showFieldEditor = true;
         },
-        handleSaveSettings() {
-            const cardStats = [...this.cardStats]
-            const upsertObject = this.fields.map( field => {
-                const thisStat = cardStats[cardStats.findIndex( stat => stat.field === field.field)]
-                return { Field: field.field, X: thisStat.x, Y: thisStat.y, Width: thisStat.width, Height: thisStat.height, visible: field.visible }
-            });
-            console.log(upsertObject);
+        async handleSaveSettings() {
+
+            function pxToNum(val) {
+                return Number(val.replace("px",""))
+            }
+            
+                const cardStats = this.$refs.fields.map( r => {
+                    return {
+                        field: r.$el.dataset.field, 
+                        width: r.$el.style.width, 
+                        height: r.$el.style.height, 
+                        x: r.$el.style.left, 
+                        y: r.$el.style.top 
+                    }
+                });
+                const upsertObject = this.fields.map( field => {
+                    const thisStat = cardStats[cardStats.findIndex( stat => stat.field === field.field)]
+                    return { Field: field.field, X: pxToNum(thisStat.x), Y: pxToNum(thisStat.y), Width: pxToNum(thisStat.width), Height: pxToNum(thisStat.height), Visible: field.visible }
+                });
+                console.log(upsertObject);
+                await sbHttp.post_notify("api/Product/UpsertProductViewSettings",upsertObject,"Settings saved!")
+            
         }
     },
     async mounted() {
@@ -133,7 +148,7 @@ export default {
             const idxOfThisViewSetting = settingsRes.data ? settingsRes.data.findIndex( vs => vs.field === key) : -1;
             let thisViewSetting = {}
             if (idxOfThisViewSetting > -1) {
-                thisViewSetting = res.data[idxOfThisViewSetting]
+                thisViewSetting = settingsRes.data[idxOfThisViewSetting]
             } else {
                 thisViewSetting = { width: width, height: height, x: x+width, y: y+height, visible: true}
                 if (y + height + 15 > 450) {
@@ -151,16 +166,7 @@ export default {
         
     },
     computed: {
-        visibleFields() {
-            return this.fields.filter( f => f.visible);
-        },
-        cardStats() {
-            if (this.$refs.visibleFields) {
-                return this.$refs.visibleFields.map( r => {return {field: r.$el.dataset.field, width: r.$el.offsetWidth, height: r.$el.offsetHeight, x: r.$el.offsetLeft, y: r.$el.offsetTop }} );
-            } else return null;
-            
         }
-    }
 }
 </script>
 

@@ -90,6 +90,7 @@ export default new Vuex.Store({
       state.loggedInEmployee = null;
       for (let entity in state.entities) {
         state.entities[entity].data = [];
+        state.entities[entity].lastUpdated = null;
       }
     },
     updateEntity(state, {entityKey,newEntities,totalOverwrite}) {

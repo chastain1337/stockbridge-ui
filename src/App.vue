@@ -4,7 +4,7 @@
     <EntityExplorer v-if="$store.state.entityExplorer.show"></EntityExplorer>
     <ToastHolder></ToastHolder>
     <Navbar v-if="$store.state.loggedInEmployee"></Navbar>
-    <router-view v-if="$store.state.loggedInEmployee || location.pathname === '/login'" />
+    <router-view v-if="$store.state.loggedInEmployee || location.pathname.toUpperCase() === '/LOGIN'" />
     <div v-else class="text-center">
       <div style="font-size: 14pt"><div style="width: 14pt; height: 14pt;" class="spinner-border" role="status"></div> Fetching account information...</div>
     </div>
