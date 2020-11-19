@@ -1,8 +1,28 @@
 <template>
 
-<div :id="'card-'+field.field" ref="card" class="card">
+<div :id="'card-'+field.field" ref="card" :class="(editMode ? 'card transparent' : 'card')">
     <div :id="'card-'+field.field+'-header'" class="card-header">{{field.title}}</div>
-    <div v-if="!entityLoading" class="card-body" :title="entityIsMissing ? 'Click to load entity.' : null" :class="entityIsMissing ? 'missing-entity' : null" @click="entityIsMissing ? cardClickMethod(dispatchMethod) : null">{{value}}</div>
+    <div v-if="!entityLoading" 
+        class="card-body" 
+        :title="entityIsMissing 
+            ? 'Click to load entity.' 
+            : null" 
+        :class="entityIsMissing 
+            ? 'missing-entity' 
+            : null" 
+        @click="handleCardClick"
+    >
+        <div v-if="editingThisCard" class="input-group">
+            <input v-if="editingThisCard" class="form-control" v-model="fieldValueLocal" @keypress.enter="confirmEdit" ref="editingInput" @focus="handleFocus" @keydown.esc="cancelEdit"/>
+            <div class="input-group-append">
+                <kendo-button icon="check" type="button" @click="handleConfirmEditClick"></kendo-button>
+            </div>
+            <div class="input-group-append">
+                <kendo-button icon="close" type="button" @click="handleCancelEditClick"></kendo-button>
+            </div>
+        </div>
+        <span v-else>{{value}}</span>
+    </div>
     <div v-else class="card-body text-center"><div class="spinner-border" role="status"></div></div>
 </div>
 
@@ -13,14 +33,18 @@
 export default {
     props: {
         field: Object,
-        loadedProduct: Object
+        loadedProduct: Object,
+        editMode: Boolean,
+        fieldIndex: Number,
     },
     name: "Card",
     data() {
         return {
             entityIsMissing: false,
             entityLoading: false,
-            dispatchMethod: ""
+            dispatchMethod: "",
+            fieldValueLocal: "",
+            editingThisCard: false
         }
     },
     methods: {
@@ -31,13 +55,56 @@ export default {
         async fetchEntity(dispatchMethod) {
             this.entityLoading = true;
             await this.$store.dispatch(dispatchMethod);
+            
             this.entityLoading = false;
             
         },
-        cardClickMethod() {
+        handleFocus(e) {
+            console.log(e.target.value)
+            e.target.setSelectionRange(0,e.target.value.length);
+        },
+        handleCardClick(e) {
+            if (this.editingThisCard) return;
+            
+            if (this.entityIsMissing) {
+                return this.fetchEntityWrapper()
+            }
+
+            if (this.editMode && !this.editingThisCard) {
+                this.fieldValueLocal = this.value;
+                this.editingThisCard = true;
+                this.$nextTick( () => {
+                    this.$refs.editingInput.focus();
+                });
+                
+                return;
+            }
+        },
+        handleConfirmEditClick(e) {
+            e.event.stopPropagation(); // bubbling = death
+
+            this.confirmEdit();
+
+        },
+        handleCancelEditClick(e) {
+            e.event.stopPropagation();
+            this.cancelEdit()
+        },
+        confirmEdit() {
+            if (this.$v.fieldValueLocal.$invalid) {
+                sb.notify.toast(`${this.fieldValueLocal} is not a valid value for ${this.field.title}.`,3000,"F");
+            } else {
+                this.$emit("editCard",this.field.field,this.fieldIndex,this.fieldValueLocal);
+                this.editingThisCard = false;
+            }
+        },
+        cancelEdit() {
+            this.editingThisCard = false;
+        },
+        fetchEntityWrapper() {
             if (this.dispatchMethod === "") return;
             this.fetchEntity(this.dispatchMethod);
-        }
+        },
     },
     mounted() {
         const el = document.getElementById("card-"+this.field.field) 
@@ -47,6 +114,8 @@ export default {
         el.style.width = this.field.width + 'px';
         el.style.height = this.field.height + 'px';
         dragElement(el);
+
+        this.fieldValueLocal = this.value;
 
         function dragElement(elmnt) {
             var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
@@ -83,6 +152,9 @@ export default {
             }
         }
     },
+    validations() {
+        return {fieldValueLocal: this.field.validation}
+    },
     computed: {
         value() {
             if (this.field.value === null) return "";
@@ -113,14 +185,25 @@ export default {
 </script>
 
 <style scoped>
+    .transparent:hover {
+        opacity: 1;
+    }
+
+    .transparent {
+        opacity: 0.6;
+        cursor: pointer;
+    }
+
     .card {
         position: absolute;
         z-index: 9;
         resize: both;
         
-        box-shadow: 2px 2px 2px rgba(0,0,0,0.8);
+        box-shadow: 6px 8px 15px -2px rgba(0,0,0,0.47);
         overflow: auto;
         background-color: white;
+        min-width: 125px;
+        min-height: 85px;
     }
 
     .card-header {
@@ -132,6 +215,7 @@ export default {
 
     .card-body {
         padding: .25rem;
+        background-color: #eeeeee;
     }
 
     .missing-entity {

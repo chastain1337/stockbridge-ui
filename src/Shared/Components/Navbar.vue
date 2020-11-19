@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand">
+  <nav class="navbar navbar-expand my-0">
     <router-link class="navbar-brand" to="/Dashboard">
       <img src="~@/assets/Arch_bridge_icon.svg">
     </router-link>

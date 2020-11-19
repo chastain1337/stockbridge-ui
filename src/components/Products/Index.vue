@@ -1,25 +1,41 @@
+
+
 <template>
     
         <div class="container-fluid">
-            <div class="row mt-3">
-                <div class="col-3">
-                    <div class="input-group">
-                        <input class="form-control" v-model="searchedSKU" placeholder="SKU..." />
+            <div id="image-container-outer">
+                    <div id="image-container-inner"></div>
+                </div>
+            <div class="row mt-3 h-100">
+                <div class="col-3 my-auto">
+                    <div v-if="!editMode" class="input-group">
+                        <input class="form-control" v-model="searchedSKU" placeholder="SKU..." @keypress="handleKeyPress" />
                         <div class="input-group-append">
                             <kendo-button icon="search" type="button" @click="loadProductData"></kendo-button>
                         </div>
                     </div>
+                    <div v-else class="text-center font-weight-bold" style="font-size: 12pt">
+                        EDIT MODE: Select a card to edit it.
+                    </div>
                 </div>
-                <div class="col-4">
+                <div class="col">
                     <kendo-button class="mx-1" title="Field selector..." icon="file-add" @click="handleOpen"></kendo-button>
-                    <kendo-button class="mx-1" title="Save field settings" icon="save" @click="handleSaveSettings"></kendo-button>
+                    <kendo-button class="mx-1" title="Save field settings" icon="save" :disabled="editMode" @click="handleSaveSettings"></kendo-button>
                 </div>
+                <div class="col d-flex justify-content-end">
+                    <kendo-button class="mx-1" title="Add a product..." icon="plus"></kendo-button>
+                    <kendo-button key="savebutton" v-if="editMode" class="mx-1" title="Save changes to product" icon="save" :style="unsavedChanges ? 'background-color: lightgreen' : null" @click="handleSaveProduct"></kendo-button>
+                    <kendo-button key="editbutton" v-else class="mx-1" title="Enable edit mode" :disabled="!productIsLoaded" icon="pencil" @click="handleEditModeClick"></kendo-button>
+                    <kendo-button class="mx-1" title="Delete this produt..." :disabled="!productIsLoaded" icon="delete"></kendo-button>
+                    <kendo-button class="mx-1" title="View all products" icon="list-unordered"></kendo-button>
+                </div>
+                
             </div>
         
             
         <div class="mt-3">
             <div v-if="fields">
-                <card v-for="field in fields" v-show="field.visible" :data-field="field.field" :key="field.field" :field="field" ref="fields"></card>
+                <card v-for="(field,i) in fields" v-show="field.visible" :data-field="field.field" :key="field.field" :field="field" :editMode="editMode" ref="fields" @editCard="handleEditCard" :fieldIndex="i"></card>
             </div>
             <div v-else style="font-size: 14pt">
                 <div style="width: 14pt; height: 14pt;" class="spinner-border" role="status"></div> 
@@ -57,6 +73,7 @@
                 <button class="k-button" style="background-color: #dddddd" @click="handleClose">Close</button>
             </dialog-actions-bar>
         </k-dialog>
+        
 
 
         </div>
@@ -66,6 +83,7 @@
 import Card from "@/Components/Products/Card"
 import sbHttp from "@/Shared/sbHttp"
 import entityData from "@/Shared/gridEntityData"
+import validations from "@/Shared/validations"
 
 export default {
     name: 'Products',
@@ -75,19 +93,43 @@ export default {
             searchedSKU: "",
             fields: null,
             showFieldEditor: false,
-            loadedProduct: null
+            productIsLoaded: false,
+            editMode: false,
+            loadedProduct: null,
+            unsavedChanges: false
         }
     },
     methods: {
+        handleSaveProduct() {
+            this.editMode = false;
+            console.log(this.loadedProduct)
+        },
+        handleEditModeClick() {
+            this.editMode = true;
+        },
+        handleEditCard(fieldName,fieldIndex,newValue) {
+            // field validated before emit
+            
+            // update local version; if this is first update, set unsavedChanges to true
+            const product = {...this.loadedProduct}
+            const fullValue = isNaN(Number(newValue)) ? newValue : Number(newValue);
+
+            product[fieldName] = fullValue;
+            this.loadedProduct = product;
+            this.fields[fieldIndex].value = fullValue;
+            this.unsavedChanges = true;
+            
+        },
         loadProductData() {
             const product = this.$store.state.entities.products.data.filter( p => p.sku === this.searchedSKU)[0]
-            console.log(product);
             if (product) {
+                this.loadedProduct = {...product}
                 const fields = [...this.fields]
                 fields.forEach( field => {
                     field.value = product[field.field]
                 });
                 this.fields = fields;
+                this.productIsLoaded = true;
             } else {
                 return sb.notify.toast("No product found.",1500,"F");
             }
@@ -109,6 +151,9 @@ export default {
         },
         handleOpen() {
             this.showFieldEditor = true;
+        },
+        handleKeyPress(e) {
+            if (e.key === "Enter") this.loadProductData();
         },
         async handleSaveSettings() {
 
@@ -159,14 +204,34 @@ export default {
                 }
             }
             
-            fields.push({field: key, title: productFields[key].friendlyName, value: null, x: thisViewSetting.x, y: thisViewSetting.y, width: thisViewSetting.width, height: thisViewSetting.height, visible: thisViewSetting.visible });
+            fields.push({
+                field: key, 
+                title: productFields[key].friendlyName, 
+                value: null, 
+                x: thisViewSetting.x, 
+                y: thisViewSetting.y, 
+                width: thisViewSetting.width, 
+                height: thisViewSetting.height, 
+                visible: thisViewSetting.visible, 
+                validation: validations.productValidations[key] });
             this.fields = fields
+
+
         }
         
         
     },
-    computed: {
-        }
+    validations() {
+    if (this.loadedProduct) {
+        console.log(validations.productValidations);
+        return { loadedProduct: {...validations.productValidations},
+        };
+    } else {
+        return {}
+    }
+  },
+
+    
 }
 </script>
 
@@ -177,5 +242,17 @@ export default {
 
     .hidden-field {
         color: darkgray;
+    }
+
+    #image-container-outer {
+    background: url(~@/assets/school.png);
+    background-size: cover;
+    opacity: 0.15;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    top: 63px;
     }
 </style>
