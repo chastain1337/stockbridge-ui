@@ -149,6 +149,7 @@ class GenericCustomField {
      * @param {genericCustomFieldFields} customField 
      */
     constructor(customField) {
+        this.ID = customField.id
         this.FriendlyName = customField.friendlyName
         this.Description = customField.description
         this.SystemName = customField.systemName

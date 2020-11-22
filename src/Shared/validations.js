@@ -132,5 +132,11 @@ export default {
         willChargeFreightForOrders: {isNullableBool},
         leadTimeBusinessDays: {integer},
         useAutoOrdering: {required, isBool},
+    },
+    customFieldValidations: {
+      friendlyName: {required},
+      systemName: {required},
+      value: {required},
+      description: {required}
     }
 };

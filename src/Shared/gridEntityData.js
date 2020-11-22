@@ -100,6 +100,7 @@ export default {
             available: { friendlyName: "Available", hidden: true},
             toOrderQuantity: { friendlyName: "To Order Quantity", hidden: true},
             toOrderAmount: { friendlyName: "To Order Amount", hidden: true},
+            customFields: {friendlyName: "Custom Fields", hidden: true}
         },
         watch: {
             partNumber: {
@@ -166,6 +167,7 @@ export default {
     },
     genericCustomField: {
         fields: {
+            id: {},
             friendlyName: {},
             systemName: {},
             description: {},

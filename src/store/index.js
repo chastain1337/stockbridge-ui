@@ -166,10 +166,16 @@ export default new Vuex.Store({
           });
       });
     },
-    getEmployees({ commit }) {
-      const totalOverwrite = this.state.entities.employees.lastUpdated
-        ? false
-        : true;
+    getEmployees({ commit }, forceFullUpdate = false) {
+      
+      const totalOverwrite = forceFullUpdate 
+        ? true 
+        : this.state.entities.employees.lastUpdated
+          ? false
+          : true;
+      console.log("forceFullUpdate:",forceFullUpdate)
+      console.log("totalOverwrite:",totalOverwrite)
+
       const dateToSend = kendo.toString(
         new Date(this.state.entities.employees.lastUpdated),
         "s"
@@ -191,10 +197,12 @@ export default new Vuex.Store({
           });
       });
     },
-    getProducts({ commit }) {
-      const totalOverwrite = this.state.entities.products.lastUpdated
-        ? false
-        : true;
+    getProducts({ commit }, forceFullUpdate = false) {
+      const totalOverwrite = forceFullUpdate 
+        ? true 
+        : this.state.entities.employees.lastUpdated
+          ? false
+          : true;
       const dateToSend = kendo.toString(
         new Date(this.state.entities.products.lastUpdated),
         "s"

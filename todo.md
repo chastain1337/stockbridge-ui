@@ -8,3 +8,4 @@ Products:
     - Add delete button
     - Add "Add" button
     - Add "View All" button
+    - CRUD custom fields

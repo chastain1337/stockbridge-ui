@@ -9,7 +9,7 @@
             <div class="row mt-3 h-100">
                 <div class="col-3 my-auto">
                     <div v-if="!editMode" class="input-group">
-                        <input class="form-control" v-model="searchedSKU" placeholder="SKU..." @keypress="handleKeyPress" />
+                        <input class="form-control" v-model="searchedSKU" placeholder="SKU..." @keypress.enter="loadProductData" />
                         <div class="input-group-append">
                             <kendo-button icon="search" type="button" @click="loadProductData"></kendo-button>
                         </div>
@@ -24,7 +24,7 @@
                 </div>
                 <div class="col d-flex justify-content-end">
                     <kendo-button class="mx-1" title="Add a product..." icon="plus"></kendo-button>
-                    <kendo-button key="savebutton" v-if="editMode" class="mx-1" title="Save changes to product" icon="save" :style="unsavedChanges ? 'background-color: lightgreen' : null" @click="handleSaveProduct"></kendo-button>
+                    <kendo-button key="savebutton" v-if="editMode" class="mx-1" title="Save changes to product" icon="save" :style="unsavedChanges ? 'background-color: lightgreen' : 'background-color: #e4e7eb'" @click="handleSaveProduct"></kendo-button>
                     <kendo-button key="editbutton" v-else class="mx-1" title="Enable edit mode" :disabled="!productIsLoaded" icon="pencil" @click="handleEditModeClick"></kendo-button>
                     <kendo-button class="mx-1" title="Delete this produt..." :disabled="!productIsLoaded" icon="delete"></kendo-button>
                     <kendo-button class="mx-1" title="View all products" icon="list-unordered"></kendo-button>
@@ -35,7 +35,17 @@
             
         <div class="mt-3">
             <div v-if="fields">
-                <card v-for="(field,i) in fields" v-show="field.visible" :data-field="field.field" :key="field.field" :field="field" :editMode="editMode" ref="fields" @editCard="handleEditCard" :fieldIndex="i"></card>
+                <card 
+                    v-for="(field,i) in fields" 
+                    v-show="field.visible" 
+                    :data-field="field.field" 
+                    :key="field.field" 
+                    :field="field" 
+                    :editMode="editMode" 
+                    ref="fields" 
+                    @editCard="handleEditCard" 
+                    @customFieldEditClick="handleCustomFieldEditClick"
+                    :fieldIndex="i"></card>
             </div>
             <div v-else style="font-size: 14pt">
                 <div style="width: 14pt; height: 14pt;" class="spinner-border" role="status"></div> 
@@ -73,6 +83,16 @@
                 <button class="k-button" style="background-color: #dddddd" @click="handleClose">Close</button>
             </dialog-actions-bar>
         </k-dialog>
+
+        <CustomFieldsEditor
+            v-if="showCustomFieldsModal"
+            :customFields="loadedProduct.customFields"
+            :friendlyIdentifier="loadedProduct.sku"
+            :identifier="loadedProduct.id"
+            identifierType="productID"
+            :unsavedChangesInParent="unsavedChanges"
+            @close="handleCustomFieldEditorClose"
+        />
         
 
 
@@ -84,10 +104,11 @@ import Card from "@/Components/Products/Card"
 import sbHttp from "@/Shared/sbHttp"
 import entityData from "@/Shared/gridEntityData"
 import validations from "@/Shared/validations"
+import CustomFieldsEditor from "@/Shared/Components/CustomFieldsEditor";
 
 export default {
     name: 'Products',
-    components: {card: Card},
+    components: {card: Card, CustomFieldsEditor},
     data() {
         return {
             searchedSKU: "",
@@ -96,10 +117,21 @@ export default {
             productIsLoaded: false,
             editMode: false,
             loadedProduct: null,
-            unsavedChanges: false
+            unsavedChanges: false,
+            showCustomFieldsModal: false
         }
     },
     methods: {
+        handleCustomFieldEditorClose(savedChanges) {
+            console.log(savedChanges);
+            
+            if (savedChanges) {
+                this.loadProductData();
+                this.unsavedChanges = false;
+            }
+            
+            this.showCustomFieldsModal = false;
+        },
         handleSaveProduct() {
             this.editMode = false;
             console.log(this.loadedProduct)
@@ -152,15 +184,16 @@ export default {
         handleOpen() {
             this.showFieldEditor = true;
         },
-        handleKeyPress(e) {
-            if (e.key === "Enter") this.loadProductData();
+        handleCustomFieldEditClick() {
+            this.showCustomFieldsModal = true;
         },
+        
         async handleSaveSettings() {
 
             function pxToNum(val) {
                 return Number(val.replace("px",""))
             }
-            
+                console.log(this.$refs.fields)
                 const cardStats = this.$refs.fields.map( r => {
                     return {
                         field: r.$el.dataset.field, 
@@ -170,6 +203,7 @@ export default {
                         y: r.$el.style.top 
                     }
                 });
+                console.log("card stats:",cardStats)
                 const upsertObject = this.fields.map( field => {
                     const thisStat = cardStats[cardStats.findIndex( stat => stat.field === field.field)]
                     return { Field: field.field, X: pxToNum(thisStat.x), Y: pxToNum(thisStat.y), Width: pxToNum(thisStat.width), Height: pxToNum(thisStat.height), Visible: field.visible }
@@ -214,10 +248,9 @@ export default {
                 height: thisViewSetting.height, 
                 visible: thisViewSetting.visible, 
                 validation: validations.productValidations[key] });
-            this.fields = fields
-
-
         }
+            
+            this.fields = fields
         
         
     },

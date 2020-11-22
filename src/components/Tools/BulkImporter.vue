@@ -131,6 +131,7 @@ export default {
           this.gridColumns.forEach( col => {
             if (col.custom) {
               const cf = { 
+                id: -1,
                 friendlyName: col.title,
                 systemName: col.field,
                 description: col.description,
