@@ -1,67 +1,67 @@
 <template>
-    <div
-      :id="'card-' + field.field"
-      ref="card"
-      :class="editMode ? 'card transparent' : 'card'"
-    >
-      <div :id="'card-' + field.field + '-header'" class="card-header">
-        {{ field.title }}
-      </div>
-      <div
-        v-if="!entityLoading"
-        class="card-body"
-        :title="entityIsMissing ? 'Click to load entity.' : null"
-        :class="entityIsMissing ? 'missing-entity' : null"
-        @click="handleCardClick"
-      >
-        <table
-          v-if="field.field === 'customFields'"
-          class="cf-table table table-sm table-bordered table-striped table-hover"
-        >
-          <tr>
-            <th class="p-0">Name</th>
-            <th class="p-0">Desc</th>
-            <th class="p-0">Value</th>
-          </tr>
-          <tr v-for="cf in field.value" :key="cf.systemName">
-            <td class="p-1">{{ cf.friendlyName }}</td>
-            <td class="p-1">{{ cf.description }}</td>
-            <td class="p-1">{{ cf.value }}</td>
-          </tr>
-        </table>
-
-        <div v-else-if="editingThisCard" class="input-group">
-          <input
-            v-if="editingThisCard"
-            class="form-control"
-            v-model="fieldValueLocal"
-            @keypress.enter="confirmEdit"
-            ref="editingInput"
-            @focus="handleFocus"
-            @keydown.esc="cancelEdit"
-          />
-          <div class="input-group-append">
-            <kendo-button
-              icon="check"
-              type="button"
-              @click="handleConfirmEditClick"
-            ></kendo-button>
-          </div>
-          <div class="input-group-append">
-            <kendo-button
-              icon="close"
-              type="button"
-              @click="handleCancelEditClick"
-            ></kendo-button>
-          </div>
-        </div>
-
-        <div v-else>{{ value }}</div>
-      </div>
-      <div v-else class="card-body text-center">
-        <div class="spinner-border" role="status"></div>
-      </div>
+  <div
+    :id="'card-' + field.field"
+    ref="card"
+    :class="editMode ? 'card transparent' : 'card'"
+  >
+    <div :id="'card-' + field.field + '-header'" class="card-header">
+      {{ field.title }}
     </div>
+    <div
+      v-if="!entityLoading"
+      class="card-body"
+      :title="entityIsMissing ? 'Click to load entity.' : null"
+      :class="entityIsMissing ? 'missing-entity' : null"
+      @click="handleCardClick"
+    >
+      <table
+        v-if="field.field === 'customFields'"
+        class="cf-table table table-sm table-bordered table-striped table-hover"
+      >
+        <tr>
+          <th class="p-0">Name</th>
+          <th class="p-0">Desc</th>
+          <th class="p-0">Value</th>
+        </tr>
+        <tr v-for="cf in field.value" :key="cf.systemName">
+          <td class="p-1">{{ cf.friendlyName }}</td>
+          <td class="p-1">{{ cf.description }}</td>
+          <td class="p-1">{{ cf.value }}</td>
+        </tr>
+      </table>
+
+      <div v-else-if="editingThisCard" class="input-group">
+        <input
+          v-if="editingThisCard"
+          class="form-control"
+          v-model="fieldValueLocal"
+          @keypress.enter="confirmEdit"
+          ref="editingInput"
+          @focus="handleFocus"
+          @keydown.esc="cancelEdit"
+        />
+        <div class="input-group-append">
+          <kendo-button
+            icon="check"
+            type="button"
+            @click="handleConfirmEditClick"
+          ></kendo-button>
+        </div>
+        <div class="input-group-append">
+          <kendo-button
+            icon="close"
+            type="button"
+            @click="handleCancelEditClick"
+          ></kendo-button>
+        </div>
+      </div>
+
+      <div v-else>{{ value }}</div>
+    </div>
+    <div v-else class="card-body text-center">
+      <div class="spinner-border" role="status"></div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -114,7 +114,7 @@ export default {
         !this.editingThisCard &&
         this.field.field === "customFields"
       ) {
-        return this.$emit("customFieldEditClick")
+        return this.$emit("customFieldEditClick");
       }
 
       if (this.editMode && !this.editingThisCard) {
@@ -224,13 +224,7 @@ export default {
             this.dispatchMethod = "getVendors";
             return "Vendors not loaded.";
           }
-          this.entityIsMissing = false;
-          if (this.field.value > 0) {
-            return this.$store.state.entities.vendors.data.find(
-                (v) => v.id === this.field.value
-            ).code;
-          }
-          return "Could not find vendor."
+          return this.field.value;
         case "location":
           if (this.$store.state.entities.locations.data.length === 0) {
             this.entityIsMissing = true;

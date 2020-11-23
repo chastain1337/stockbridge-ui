@@ -10,7 +10,7 @@ class UpdateEntitiesSettings {
    * @param {Array} _newEntities - The array of new entities to add/update the store.
    * @param {Boolean} _totalOverwrite - Default true. Setting to false will merge the two entites so that those in the newEntities array will overwrite those in the current state where the "id" field matches.
    */
-  constructor(_entityKey, _newEntities, _totalOverwrite=true) {
+  constructor(_entityKey, _newEntities, _totalOverwrite = true) {
     this.entityKey = _entityKey
     this.newEntities = _newEntities
     this.totalOverwrite = _totalOverwrite
@@ -70,7 +70,7 @@ export default new Vuex.Store({
     modal: {
       show: false,
       settings: {
-        callback: function() {
+        callback: function () {
           return;
         }
       } // Defaults are set by close_modal onMount
@@ -93,7 +93,7 @@ export default new Vuex.Store({
         state.entities[entity].lastUpdated = null;
       }
     },
-    updateEntity(state, {entityKey,newEntities,totalOverwrite}) {
+    updateEntity(state, { entityKey, newEntities, totalOverwrite }) {
       state.entities[entityKey].lastUpdated = Date.now();
       if (totalOverwrite) {
         state.entities[entityKey].data = [...newEntities];
@@ -132,7 +132,7 @@ export default new Vuex.Store({
         affirmText: "OK",
         width: 800,
         headerText: "",
-        callback: function() {
+        callback: function () {
           return;
         }
       };
@@ -167,14 +167,14 @@ export default new Vuex.Store({
       });
     },
     getEmployees({ commit }, forceFullUpdate = false) {
-      
-      const totalOverwrite = forceFullUpdate 
-        ? true 
+
+      const totalOverwrite = forceFullUpdate
+        ? true
         : this.state.entities.employees.lastUpdated
           ? false
           : true;
-      console.log("forceFullUpdate:",forceFullUpdate)
-      console.log("totalOverwrite:",totalOverwrite)
+      console.log("forceFullUpdate:", forceFullUpdate)
+      console.log("totalOverwrite:", totalOverwrite)
 
       const dateToSend = kendo.toString(
         new Date(this.state.entities.employees.lastUpdated),
@@ -183,23 +183,22 @@ export default new Vuex.Store({
       return new Promise(resolve => {
         sbHttp
           .get_notify(
-            `/api/Employee/GetEmployees${
-              totalOverwrite ? "" : "?modifiedAfter=" + dateToSend
+            `/api/Employee/GetEmployees${totalOverwrite ? "" : "?modifiedAfter=" + dateToSend
             }`,
             null,
             "There was an error fetching the Employees from the database."
           )
           .then(res => {
             if (res.success) {
-              commit("updateEntity",new UpdateEntitiesSettings("employees",res.data,totalOverwrite));
+              commit("updateEntity", new UpdateEntitiesSettings("employees", res.data, totalOverwrite));
             }
             resolve();
           });
       });
     },
     getProducts({ commit }, forceFullUpdate = false) {
-      const totalOverwrite = forceFullUpdate 
-        ? true 
+      const totalOverwrite = forceFullUpdate
+        ? true
         : this.state.entities.employees.lastUpdated
           ? false
           : true;
@@ -210,15 +209,14 @@ export default new Vuex.Store({
       return new Promise(resolve => {
         sbHttp
           .get_notify(
-            `/api/Product/GetProducts${
-              totalOverwrite ? "" : "?modifiedAfter=" + dateToSend
+            `/api/Product/GetProducts${totalOverwrite ? "" : "?modifiedAfter=" + dateToSend
             }`,
             null,
             "There was an error fetching the Products from the database."
           )
           .then(res => {
             if (res.success) {
-              commit("updateEntity",new UpdateEntitiesSettings("products",res.data,totalOverwrite));
+              commit("updateEntity", new UpdateEntitiesSettings("products", res.data, totalOverwrite));
             }
             resolve();
           });
@@ -234,7 +232,7 @@ export default new Vuex.Store({
           )
           .then(res => {
             if (res.success) {
-              commit("updateEntity",new UpdateEntitiesSettings("departments",res.data));
+              commit("updateEntity", new UpdateEntitiesSettings("departments", res.data));
             }
             resolve();
           });
@@ -250,7 +248,7 @@ export default new Vuex.Store({
           )
           .then(res => {
             if (res.success) {
-              commit("updateEntity",new UpdateEntitiesSettings("vendors",res.data));
+              commit("updateEntity", new UpdateEntitiesSettings("vendors", res.data));
             }
             resolve();
           });
@@ -266,7 +264,7 @@ export default new Vuex.Store({
           )
           .then(res => {
             if (res.success) {
-              commit("updateEntity",new UpdateEntitiesSettings("orderingMethods",res.data));
+              commit("updateEntity", new UpdateEntitiesSettings("orderingMethods", res.data));
             }
             resolve();
           });
@@ -282,7 +280,7 @@ export default new Vuex.Store({
           )
           .then(res => {
             if (res.success) {
-              commit("updateEntity",new UpdateEntitiesSettings("locations",res.data));
+              commit("updateEntity", new UpdateEntitiesSettings("locations", res.data));
             }
             resolve();
           });
@@ -298,7 +296,7 @@ export default new Vuex.Store({
           )
           .then(res => {
             if (res.success) {
-              commit("updateEntity",new UpdateEntitiesSettings("roles",res.data));
+              commit("updateEntity", new UpdateEntitiesSettings("roles", res.data));
             }
             resolve();
           });
@@ -372,7 +370,7 @@ export default new Vuex.Store({
           .post_notify(
             "/api/Product/UpsertProducts",
             products,
-            "Product(s) updated!"
+            `Product${products.length > 1 ? 's' : ''} updated!`
           )
           .then(resolve());
       });
