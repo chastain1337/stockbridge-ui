@@ -8,12 +8,10 @@ class UpdateEntitiesSettings {
    * The payload passed in to the updateEntity mutation.
    * @param {String} _entityKey - The key of the entity. Used in store.state[key].*
    * @param {Array} _newEntities - The array of new entities to add/update the store.
-   * @param {Boolean} _totalOverwrite - Default true. Setting to false will merge the two entites so that those in the newEntities array will overwrite those in the current state where the "id" field matches.
    */
   constructor(_entityKey, _newEntities, _totalOverwrite = true) {
     this.entityKey = _entityKey
     this.newEntities = _newEntities
-    this.totalOverwrite = _totalOverwrite
   }
 }
 
@@ -93,17 +91,9 @@ export default new Vuex.Store({
         state.entities[entity].lastUpdated = null;
       }
     },
-    updateEntity(state, { entityKey, newEntities, totalOverwrite }) {
+    updateEntity(state, { entityKey, newEntities }) {
       state.entities[entityKey].lastUpdated = Date.now();
-      if (totalOverwrite) {
-        state.entities[entityKey].data = [...newEntities];
-      } else {
-        state.entities[entityKey].data = _.unionBy(
-          [...newEntities],
-          [...state.entities[entityKey].data],
-          "id"
-        );
-      }
+      state.entities[entityKey].data = [...newEntities];
     },
     put_departments(state, departments) {
       state.entities.departments.data = [...departments];
@@ -166,57 +156,44 @@ export default new Vuex.Store({
           });
       });
     },
-    getEmployees({ commit }, forceFullUpdate = false) {
-
-      const totalOverwrite = forceFullUpdate
-        ? true
-        : this.state.entities.employees.lastUpdated
-          ? false
-          : true;
-      console.log("forceFullUpdate:", forceFullUpdate)
-      console.log("totalOverwrite:", totalOverwrite)
-
-      const dateToSend = kendo.toString(
-        new Date(this.state.entities.employees.lastUpdated),
-        "s"
-      );
+    getEmployees({ commit }) {
       return new Promise(resolve => {
         sbHttp
           .get_notify(
-            `/api/Employee/GetEmployees${totalOverwrite ? "" : "?modifiedAfter=" + dateToSend
-            }`,
+            `/api/Employee/GetEmployees`,
             null,
             "There was an error fetching the Employees from the database."
           )
           .then(res => {
             if (res.success) {
-              commit("updateEntity", new UpdateEntitiesSettings("employees", res.data, totalOverwrite));
+              commit("updateEntity", new UpdateEntitiesSettings("employees", res.data));
             }
             resolve();
           });
       });
     },
-    getProducts({ commit }, forceFullUpdate = false) {
-      const totalOverwrite = forceFullUpdate
-        ? true
-        : this.state.entities.employees.lastUpdated
-          ? false
-          : true;
-      const dateToSend = kendo.toString(
-        new Date(this.state.entities.products.lastUpdated),
-        "s"
-      );
+    deleteProducts({commit}, productIds) {
+      return new Promise(resolve => {
+        sbHttp
+          .post_notify(
+            '/api/Product/DeleteProducts',productIds,
+            null,
+            "There was an error fetching the Products from the database."
+          )
+          .then( () => resolve());
+      });
+    },
+    getProducts({ commit }) {
       return new Promise(resolve => {
         sbHttp
           .get_notify(
-            `/api/Product/GetProducts${totalOverwrite ? "" : "?modifiedAfter=" + dateToSend
-            }`,
+            `/api/Product/GetProducts`,
             null,
             "There was an error fetching the Products from the database."
           )
           .then(res => {
             if (res.success) {
-              commit("updateEntity", new UpdateEntitiesSettings("products", res.data, totalOverwrite));
+              commit("updateEntity", new UpdateEntitiesSettings("products", res.data));
             }
             resolve();
           });

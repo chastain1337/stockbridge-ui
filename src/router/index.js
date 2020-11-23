@@ -12,6 +12,7 @@ import Products from '@/components/Products'
 import MyAccount from '@/components/MyAccount' 
 import Tools from '@/components/Tools'
 import BulkImporter from '@/components/Tools/BulkImporter'
+import ProductsList from "@/components/Products/ProductsList"
 
 Vue.use(Router)
 
@@ -49,6 +50,11 @@ const router = new Router({
       path: '/Products',
       name: 'Products',
       component: Products,
+    },
+    {
+      path: '/Products/All',
+      name: 'ProductsList',
+      component: ProductsList,
     },
     {
       path: '/MyAccount',

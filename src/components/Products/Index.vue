@@ -47,6 +47,8 @@
       </div>
       <div class="col d-flex justify-content-end">
         <kendo-button
+          key="addproductbutton"
+          v-if="!editMode"
           class="mx-1"
           title="Add a product..."
           icon="plus"
@@ -69,21 +71,36 @@
           v-else
           class="mx-1"
           title="Enable edit mode"
-          :disabled="!productIsLoaded"
+          :disabled="loadedProduct === null || productIsLoading"
           icon="pencil"
           @click="handleEditModeClick"
         ></kendo-button>
         <kendo-button
+          key="cancelEditButton"
+          v-if="editMode"
           class="mx-1"
-          title="Delete this produt..."
-          :disabled="!productIsLoaded"
-          icon="delete"
+          title="Cancel changes"
+          icon="cancel"
+          @click="handleCancelChangesClick"
         ></kendo-button>
         <kendo-button
+          key="deleteButton"
+          class="mx-1"
+          title="Delete this produt..."
+          :disabled="loadedProduct === null || productIsLoading"
+          icon="delete"
+          @click="handleDeleteProduct"
+        ></kendo-button>
+        <router-link
+          :to="'/Products/All'"
+        >
+        <kendo-button
+          key="viewAllButton"
+          v-if="!editMode"
           class="mx-1"
           title="View all products"
           icon="list-unordered"
-        ></kendo-button>
+        ></kendo-button></router-link>
       </div>
     </div>
 
@@ -100,6 +117,7 @@
           @editCard="handleEditCard"
           @customFieldEditClick="handleCustomFieldEditClick"
           :fieldIndex="i"
+          :productIsLoading="productIsLoading"
         ></card>
       </div>
       <div v-else style="font-size: 14pt">
@@ -181,16 +199,15 @@ export default {
       searchedSKU: "",
       fields: null,
       showFieldEditor: false,
-      productIsLoaded: false,
       editMode: false,
       loadedProduct: null,
       unsavedChanges: false,
       showCustomFieldsModal: false,
+      productIsLoading: false
     };
   },
   methods: {
     handleCustomFieldEditorClose(savedChanges) {
-      console.log(savedChanges);
 
       if (savedChanges) {
         this.loadProductData();
@@ -199,14 +216,40 @@ export default {
 
       this.showCustomFieldsModal = false;
     },
-    async handleSaveProduct() {
-      await this.$store.dispatch("upsertProducts", [this.loadedProduct]);
-      await this.$store.dispatch("getProducts");
+    handleCancelChangesClick() {
       this.loadProductData();
       this.editMode = false;
     },
+    async handleSaveProduct() {
+      const loadedProduct = {...this.loadedProduct}
+      //this is hell
+      loadedProduct.primaryVendorCode = loadedProduct.primaryVendor === "" || loadedProduct.primaryVendor === 0 ? null : loadedProduct.primaryVendor
+      loadedProduct.secondaryVendorCode = loadedProduct.secondaryVendor === "" || loadedProduct.secondaryVendor === 0 ? null : loadedProduct.secondaryVendor
+      loadedProduct.locationName = loadedProduct.location === "" || loadedProduct.location === 0 ? null : loadedProduct.location
+      
+      await this.$store.dispatch("upsertProducts", [loadedProduct]);
+      setTimeout( async () => {
+        await this.$store.dispatch("getProducts");
+        this.loadProductData();
+        this.editMode = false;
+      },500)
+
+    },
     handleEditModeClick() {
       this.editMode = true;
+    },
+    async handleDeleteProduct() {
+      const sku = this.loadedProduct.sku
+      const answer = confirm(`Are you sure you want to delete ${sku}?`)
+      if (answer) {
+        this.fields = null;
+        await this.$store.dispatch("deleteProducts",[this.loadedProduct.id]);
+        sb.notify.toast(`${sku} deleted!`,1500,"S");
+        this.searchedSKU = '';
+        this.loadedProduct = null;
+        await this.$store.dispatch("getProducts",true);
+        this.resetCards();
+      }
     },
     handleEditCard(fieldName, fieldIndex, newValue) {
       // it's ok that vendorCode is used in primary vendor rather than ID
@@ -222,33 +265,58 @@ export default {
       this.fields[fieldIndex].value = fullValue;
       this.unsavedChanges = true;
     },
-    loadProductData() {
-      const product = this.$store.state.entities.products.data.filter(
-        (p) => p.sku === this.searchedSKU
-      )[0];
-      if (product) {
+    async loadProductData() {
+      const fields = [...this.fields];
+      const productIdx = this.$store.state.entities.products.data.findIndex((p) => p.sku === this.searchedSKU)
+      
+      if (productIdx > -1) {
+        this.productIsLoading = true;
+        const product = {...this.$store.state.entities.products.data[productIdx]};
         this.loadedProduct = { ...product };
-        const fields = [...this.fields];
-        fields.forEach((field) => {
-          if (
-            field.field === "primaryVendor" ||
-            field.field === "secondaryVendor"
-          ) {
-            const vendor = this.$store.state.entities.vendors.data.find(
-              (v) => v.id === product[field.field]
-            );
-            if (vendor) {
-              console.log(vendor.code);
-              field.value = vendor.code;
-            } else {
-              field.value = -1;
-            }
-          } else {
-            field.value = product[field.field];
+        for (let field of fields) {
+          // Ensure that all missing entities are present, and pull the representative string for them rather than ID
+          switch (field.field) {
+            case "primaryVendor":
+            case "secondaryVendor":
+              if (product[field.field] === 0) {
+                field.value = "";
+                break;
+              }
+              if (this.$store.state.entities.vendors.data.length === 0) {
+                await this.$store.dispatch("getVendors");
+              }
+              const vendor = this.$store.state.entities.vendors.data.find( v => v.id === product[field.field])
+              if (vendor) {
+                field.value = vendor.code;
+                product[field.field] = vendor.code;
+              } else {
+                field.value = `Could not find vendor with ID ${product[field.field]}`
+              }
+              break;
+            case "location":
+              if (product[field.field] === 0) {
+                field.value = "";
+                break;
+              }
+              if (this.$store.state.entities.locations.data.length === 0) {
+                await this.$store.dispatch("getLocations");
+              }
+              const location = this.$store.state.entities.locations.data.find( l => l.id === product[field.field]);
+              if (location) {
+                field.value = location.name
+                product[field.field] = location.name
+              } else {
+                field.value = `Could not find location with ID ${product[field.field]}`;
+              }
+              break;
+            default:
+              field.value = product[field.field] ? product[field.field] : "";
           }
-        });
+        };
+        
         this.fields = fields;
-        this.productIsLoaded = true;
+        this.loadedProduct = product;
+        this.productIsLoading = false;
       } else {
         return sb.notify.toast("No product found.", 1500, "F");
       }
@@ -309,12 +377,8 @@ export default {
         "Settings saved!"
       );
     },
-  },
-  async mounted() {
-    //Fetch the default settings
-
-    await this.$store.dispatch("getProducts");
-    const settingsRes = await sbHttp.get_notify(
+    async resetCards() {
+      const settingsRes = await sbHttp.get_notify(
       "api/Product/GetProductViewSettings",
       null,
       "Could not fetch default field settings for this account."
@@ -328,6 +392,7 @@ export default {
       x = 15 - width,
       y = 134 - height;
     for (let key in productFields) {
+      // Set the pos/size of the card based on fetched settings or new create a new settings object
       const idxOfThisViewSetting = settingsRes.data
         ? settingsRes.data.findIndex((vs) => vs.field === key)
         : -1;
@@ -364,6 +429,13 @@ export default {
     }
 
     this.fields = fields;
+    }
+  },
+  async mounted() {
+    //Fetch the default settings
+
+    await this.$store.dispatch("getProducts");
+    this.resetCards();
   },
   validations() {
     if (this.loadedProduct) {

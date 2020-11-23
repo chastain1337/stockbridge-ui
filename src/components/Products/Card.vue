@@ -7,8 +7,11 @@
     <div :id="'card-' + field.field + '-header'" class="card-header">
       {{ field.title }}
     </div>
+    <div v-if="field.value === null && productIsLoading" class="card-body text-center">
+      <div class="spinner-border spinner-border-sm" role="status"></div>
+    </div>
     <div
-      v-if="!entityLoading"
+      v-else
       class="card-body"
       :title="entityIsMissing ? 'Click to load entity.' : null"
       :class="entityIsMissing ? 'missing-entity' : null"
@@ -56,11 +59,9 @@
         </div>
       </div>
 
-      <div v-else>{{ value }}</div>
+      <div v-else>{{ value ? value : "" }}</div>
     </div>
-    <div v-else class="card-body text-center">
-      <div class="spinner-border" role="status"></div>
-    </div>
+    
   </div>
 </template>
 
@@ -70,6 +71,7 @@ export default {
     field: Object,
     editMode: Boolean,
     fieldIndex: Number,
+    productIsLoading: Boolean
   },
   name: "Card",
   data() {
@@ -215,26 +217,8 @@ export default {
   },
   computed: {
     value() {
-      if (this.field.value === null) return "";
+      if (this.field.value === null && !this.productIsLoaded) return "";
       switch (this.field.field) {
-        case "primaryVendor":
-        case "secondaryVendor":
-          if (this.$store.state.entities.vendors.data.length === 0) {
-            this.entityIsMissing = true;
-            this.dispatchMethod = "getVendors";
-            return "Vendors not loaded.";
-          }
-          return this.field.value;
-        case "location":
-          if (this.$store.state.entities.locations.data.length === 0) {
-            this.entityIsMissing = true;
-            this.dispatchMethod = "getLocations";
-            return "Locations not loaded.";
-          }
-          this.entityIsMissing = false;
-          return this.$store.state.entities.locations.data.find(
-            (v) => v.id === this.field.value
-          ).name;
         case "customFields":
           return this.field.value.filter((cf) => !cf.deleteFlag);
         default:

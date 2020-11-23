@@ -98,7 +98,7 @@ export default {
         primaryVendor: {validVendor},
         secondaryVendor: {validVendor},
         lastUnitCost: { required },
-        location: { required, validLocation },
+        location: { validLocation },
         casePack: {required},
         length_IN: {numeric, minValue: minValue(0) },
         width_IN: {numeric, minValue: minValue(0) },
